@@ -3,11 +3,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency definition files
-COPY package.json package-lock.json ./
+# Copy dependency definition files using wildcard to securely support missing package-lock.json
+COPY package*.json ./
 
 # Install all dependencies (including devDependencies)
-RUN npm ci
+RUN npm install
 
 # Copy config and source files
 COPY tsconfig.json vite.config.ts index.html ./
@@ -27,10 +27,10 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Copy package.json to run startup script and register packages
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy built assets and compiled server from builder stage
 COPY --from=builder /app/dist ./dist
