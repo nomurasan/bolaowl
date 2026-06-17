@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copy config and source files
-COPY tsconfig.json vite.config.ts index.html ./
+COPY tsconfig.json vite.config.ts index.html firebase-applet-config.json* ./
 COPY src/ ./src/
 COPY server.ts ./
 
