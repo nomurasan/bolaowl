@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "game": {
+      "title": "Game",
+      "description": "Um jogo esportivo cadastrado que está aberto ou encerrado para palpites",
+      "type": "object",
+      "properties": {
+        "homeTeam": { "type": "string" },
+        "awayTeam": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "homeScore": { "type": "integer" },
+        "awayScore": { "type": "integer" },
+        "firstGoalScorer": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["homeTeam", "awayTeam", "date", "time", "location", "isActive"]
+    },
+    "bet": {
+      "title": "Bet",
+      "description": "Um palpite enviado por um participante para determinado jogo",
+      "type": "object",
+      "properties": {
+        "userName": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "gameId": { "type": "string" },
+        "homePrediction": { "type": "integer" },
+        "awayPrediction": { "type": "integer" },
+        "firstGoalPrediction": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed"] },
+        "calculatedPoints": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userName", "userPhone", "gameId", "homePrediction", "awayPrediction", "firstGoalPrediction", "status"]
+    },
+    "setting": {
+      "title": "Setting",
+      "description": "Configurações gerais do sistema como a chave PIX",
+      "type": "object",
+      "properties": {
+        "pixKey": { "type": "string" },
+        "pixReceiver": { "type": "string" }
+      },
+      "required": ["pixKey", "pixReceiver"]
+    }
+  },
+  "firestore": {
+    "games/{gameId}": {
+      "schema": "game",
+      "description": "Lista de partidas de futebol disponíveis para palpites"
+    },
+    "bets/{betId}": {
+      "schema": "bet",
+      "description": "Palpites e previsões de placar feitas pelos torcedores"
+    },
+    "settings/{settingId}": {
+      "schema": "setting",
+      "description": "Configurações do sistema como dados de pagamento PIX"
+    }
+  }
+}

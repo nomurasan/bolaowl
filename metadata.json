@@ -1,0 +1,6 @@
+{
+  "name": "BOLÃO WL",
+  "description": "Aplicativo web completo de bolão esportivo para o WL ATACADISTA, com painel administrativo, ranking e integração de palpites com pagamento PIX.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
