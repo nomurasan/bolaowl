@@ -27,7 +27,8 @@ import {
   deleteBet,
   getSettings,
   saveSettings,
-  recomputePointsForGame
+  recomputePointsForGame,
+  resetGameAndPoints
 } from "../lib/dbHelper";
 
 interface AdminPanelProps {
@@ -80,6 +81,10 @@ export default function AdminPanel({
   const [betToDelete, setBetToDelete] = useState<Bet | null>(null);
   const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
 
+  // Reset States
+  const [gameToReset, setGameToReset] = useState<Game | null>(null);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState("");
+
   useEffect(() => {
     // Sincronizar form pix
     setPixKey(currentPixSetting.pixKey);
@@ -87,14 +92,14 @@ export default function AdminPanel({
     setAdminPhone(currentPixSetting.adminPhone || "556186267773");
   }, [currentPixSetting]);
 
-  // Verificar autenticação localmente conforme o login/senha requisitado "wlcop2026"
+  // Verificar autenticação localmente conforme o login/senha requisitado "wl2026"
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === "wlcop2026") {
+    if (passwordInput === "wl2026") {
       setIsAuthenticated(true);
       setAuthError("");
       // Guardar sessão temporária
-      localStorage.setItem("admin_token", "wlcop2026_valid");
+      localStorage.setItem("admin_token", "wl2026_valid");
     } else {
       setAuthError("Senha incorreta! Tente novamente.");
     }
@@ -103,7 +108,7 @@ export default function AdminPanel({
   useEffect(() => {
     // Restaurar sessão rápida do administrador
     const stored = localStorage.getItem("admin_token");
-    if (stored === "wlcop2026_valid") {
+    if (stored === "wl2026_valid" || stored === "wlcop2026_valid") {
       setIsAuthenticated(true);
     }
   }, []);
@@ -198,6 +203,20 @@ export default function AdminPanel({
       alert("Erro ao excluir partida: " + String(err));
     } finally {
       setGameToDelete(null);
+    }
+  };
+
+  const handleConfirmResetGame = async () => {
+    if (!gameToReset?.id) return;
+    try {
+      await resetGameAndPoints(gameToReset.id);
+      onRefreshData();
+      setResetSuccessMessage(`Placar de "${gameToReset.homeTeam} x ${gameToReset.awayTeam}" resetado com sucesso!`);
+      setTimeout(() => setResetSuccessMessage(""), 5000);
+    } catch (err) {
+      alert("Erro ao resetar partida: " + String(err));
+    } finally {
+      setGameToReset(null);
     }
   };
 
@@ -335,7 +354,7 @@ export default function AdminPanel({
             <Lock className="w-5 h-5 text-blue-500" />
           </div>
           <h3 className="text-base font-bold text-white uppercase tracking-wider">Painel Administrativo</h3>
-          <p className="text-[10px] text-white/40 font-medium">Insira a chave de acesso para entrar</p>
+          <p className="text-[10px] text-white/40 font-medium">Informe a senha ...</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -345,7 +364,7 @@ export default function AdminPanel({
             </label>
             <input
               type="password"
-              placeholder="Digite wlcop2026..."
+              placeholder="Informe a senha ..."
               required
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
@@ -479,6 +498,12 @@ export default function AdminPanel({
               <Plus className="w-4 h-4" /> Adicionar Jogo
             </button>
           </div>
+
+          {resetSuccessMessage && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-2xl text-xs font-bold uppercase tracking-wide animate-pulse flex items-center gap-2">
+              <span>🟢</span> {resetSuccessMessage}
+            </div>
+          )}
 
           {/* Form Create/Edit Game */}
           {gameFormOpen && (
@@ -732,6 +757,15 @@ export default function AdminPanel({
                     >
                       Placar Final
                     </button>
+                    {game.homeScore !== null && game.homeScore !== undefined && (
+                      <button
+                        onClick={() => setGameToReset(game)}
+                        className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/25 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer font-black"
+                        title="Zerar placar e recalcular palpites para nulo"
+                      >
+                        Resetar Placar
+                      </button>
+                    )}
                     <button
                       onClick={async () => {
                         await updateGame(game.id, { isActive: !game.isActive });
@@ -1006,6 +1040,41 @@ export default function AdminPanel({
                 className="flex-1 bg-red-600 hover:bg-red-500 active:scale-98 text-white font-black py-3 rounded-2xl uppercase tracking-widest text-[10px] cursor-pointer transition font-bold"
               >
                 Apagar Jogo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação para Resetar Jogo */}
+      {gameToReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111] border border-amber-500/30 rounded-3xl p-6 max-w-sm w-full text-center space-y-6 shadow-2xl relative">
+            <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
+              <AlertCircle className="w-8 h-8 text-amber-500" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-bold text-white tracking-tight">Resetar Partida?</h3>
+              <p className="text-zinc-400 font-semibold text-xs leading-relaxed">
+                Tem certeza que deseja resetar os palpites e o placar final de <span className="text-white font-black">{gameToReset.homeTeam} x {gameToReset.awayTeam}</span>?
+              </p>
+              <p className="text-amber-400 font-bold text-[10px] bg-amber-500/5 p-2 rounded-xl mt-2 leading-normal">
+                Isso apagará o resultado, voltará o jogo para &quot;Aguardando resultado&quot; e recalculará todos os pontos dos usuários para nulo.
+              </p>
+              <p className="text-[10px] text-zinc-500 font-medium">⚠️ Esta ação é permanente até que um novo resultado seja digitado.</p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setGameToReset(null)}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 active:scale-98 text-zinc-300 font-black py-3 rounded-2xl uppercase tracking-widest text-[10px] cursor-pointer transition font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmResetGame}
+                className="flex-1 bg-amber-600 hover:bg-amber-500 active:scale-98 text-white font-black py-3 rounded-2xl uppercase tracking-widest text-[10px] cursor-pointer transition font-bold"
+              >
+                Confirmar Reset
               </button>
             </div>
           </div>

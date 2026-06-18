@@ -345,6 +345,35 @@ export async function recomputePointsForGame(game: Game): Promise<void> {
   }
 }
 
+// Resetar o resultado de uma partida e os pontos das apostas relacionadas
+export async function resetGameAndPoints(gameId: string): Promise<void> {
+  const path = "games";
+  try {
+    // 1. Resetar placar do jogo
+    const gameRef = doc(db, "games", gameId);
+    await updateDoc(gameRef, {
+      homeScore: null,
+      awayScore: null,
+      firstGoalScorer: null,
+    });
+
+    // 2. Zerar pontos das apostas associadas a este jogo (definir como null)
+    const betsQuery = query(collection(db, "bets"), where("gameId", "==", gameId));
+    const querySnapshot = await getDocs(betsQuery);
+
+    const batch = writeBatch(db);
+    querySnapshot.docs.forEach((docSnap) => {
+      batch.update(docSnap.ref, {
+        calculatedPoints: null,
+      });
+    });
+
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
 // Calcular Ranking (Scoreboard) dos Participantes
 export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]> {
   // Apenas apostas confirmadas somam pontos
