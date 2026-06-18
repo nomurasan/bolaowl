@@ -92,16 +92,27 @@ export default function AdminPanel({
     setAdminPhone(currentPixSetting.adminPhone || "556186267773");
   }, [currentPixSetting]);
 
-  // Verificar autenticação localmente conforme o login/senha requisitado "wl2026"
-  const handleLogin = (e: React.FormEvent) => {
+  // Verificar autenticação via chamada de API segura no backend
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === "wl2026") {
-      setIsAuthenticated(true);
-      setAuthError("");
-      // Guardar sessão temporária
-      localStorage.setItem("admin_token", "wl2026_valid");
-    } else {
-      setAuthError("Senha incorreta! Tente novamente.");
+    try {
+      const response = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setIsAuthenticated(true);
+        setAuthError("");
+        localStorage.setItem("admin_token", data.token || "wl2026_valid");
+      } else {
+        setAuthError(data.error || "Senha incorreta! Tente novamente.");
+      }
+    } catch (err) {
+      setAuthError("Erro de comunicação com o servidor.");
     }
   };
 

@@ -38,6 +38,19 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Secure Admin Login API route
+app.post("/api/admin-login", (req, res) => {
+  const { password } = req.body;
+  const securePassword = process.env.ADMIN_PASSWORD || "wl2026";
+  
+  if (password === securePassword) {
+    return res.json({ success: true, token: "wl2026_valid" });
+  } else {
+    return res.status(401).json({ success: false, error: "Senha incorreta!" });
+  }
+});
+
+
 // API receipt verification route
 app.post("/api/verify-receipt", async (req, res) => {
   const { imageBase64, mimeType, expectedRecipient, expectedAmount } = req.body;
