@@ -425,7 +425,7 @@ export default function AdminPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[#050505] p-1 rounded-2xl border border-white/10 text-[10px] uppercase tracking-wider font-bold overflow-x-auto">
+      <div className="grid grid-cols-4 gap-0.5 sm:gap-1 bg-[#050505] p-1 rounded-2xl border border-white/10 text-[9px] sm:text-[10px] uppercase tracking-wider font-bold">
         {[
           { tab: "dashboard", label: "Dashboard", icon: Layers },
           { tab: "games", label: "Partidas", icon: Calendar },
@@ -438,14 +438,14 @@ export default function AdminPanel({
             <button
               key={btn.tab}
               onClick={() => setActiveTab(btn.tab as any)}
-              className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl transition shrink-0 cursor-pointer ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-1 py-2 sm:px-3 sm:py-2.5 rounded-xl transition cursor-pointer text-center ${
                 isActive
                   ? "bg-blue-600 text-white font-black"
                   : "text-white/40 hover:text-white"
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
-              {btn.label}
+              <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+              <span className="truncate max-w-full text-[8px] min-[360px]:text-[9px] sm:text-[10px]">{btn.label}</span>
             </button>
           );
         })}

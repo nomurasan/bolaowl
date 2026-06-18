@@ -447,10 +447,9 @@ export async function checkBetCompliance(
   try {
     const cleanPhone = userPhone.replace(/\D/g, "");
 
-    // 1. Checar se o usuário já possui um palpite confirmado para esse jogo
+    // 1. Checar se o usuário já possui um palpite cadastrado (confirmado ou aguardando) para esse jogo
     const qPhone = query(
       collection(db, "bets"),
-      where("status", "==", "confirmed"),
       where("userPhone", "==", cleanPhone),
       where("gameId", "==", gameId)
     );
@@ -459,7 +458,7 @@ export async function checkBetCompliance(
     if (hasAlreadyConfirmedForThisGame) {
       return {
         compliant: false,
-        reason: "Você já possui um palpite ativado e confirmado para esta partida. Cada participante só pode registrar um único palpite pago por jogo."
+        reason: "Você já possui um palpite cadastrado para esta partida (com pagamento confirmado ou aguardando validação do PIX). Cada participante só pode registrar um único palpite por jogo."
       };
     }
 

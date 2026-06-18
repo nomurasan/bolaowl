@@ -52,12 +52,11 @@ export default function Countdown({ targetTimestamp, gameLabel, game }: Countdow
                 </span>
               </div>
               <span className="text-xs font-extrabold text-white uppercase tracking-wider block leading-tight">{game.homeTeam}</span>
-              <span className="text-[9px] text-white/40 font-bold uppercase mt-0.5 tracking-widest">Mandante</span>
             </div>
 
             {/* VS Divider */}
             <div className="flex flex-col items-center">
-              <span className="text-sm font-black text-white/20 select-none bg-white/[0.02] border border-white/5 rounded-full px-3 py-1.5 flex items-center justify-center tracking-widest">
+              <span className="text-sm font-black text-white select-none bg-white/10 border border-white/25 rounded-full px-3 py-1.5 flex items-center justify-center tracking-widest shadow-md">
                 VS
               </span>
             </div>
@@ -70,18 +69,17 @@ export default function Countdown({ targetTimestamp, gameLabel, game }: Countdow
                 </span>
               </div>
               <span className="text-xs font-extrabold text-white uppercase tracking-wider block leading-tight">{game.awayTeam}</span>
-              <span className="text-[9px] text-white/40 font-bold uppercase mt-0.5 tracking-widest">Visitante</span>
             </div>
           </div>
 
           {/* Match Physics Date & Place */}
-          <div className="text-[10px] text-white/50 text-center font-bold bg-black/40 rounded-2xl py-2.5 px-4 border border-white/5 mt-3 space-y-1 w-full max-w-xs">
-            <p className="flex items-center justify-center gap-1.5 text-white/70">
-              <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+          <div className="text-[10px] text-zinc-200 text-center font-bold bg-black/40 rounded-2xl py-2.5 px-4 border border-white/5 mt-3 space-y-1 w-full max-w-xs">
+            <p className="flex items-center justify-center gap-1.5 text-white">
+              <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0" />
               <span>{game.date} às {game.time}</span>
             </p>
-            <p className="flex items-center justify-center gap-1.5 text-white/50 text-[9px] uppercase tracking-wider">
-              <MapPin className="w-3 h-3 text-white/40 shrink-0" />
+            <p className="flex items-center justify-center gap-1.5 text-zinc-200 text-[9px] uppercase tracking-wider">
+              <MapPin className="w-3 h-3 text-zinc-300 shrink-0" />
               <span className="truncate">{game.location}</span>
             </p>
           </div>
@@ -118,36 +116,36 @@ export default function Countdown({ targetTimestamp, gameLabel, game }: Countdow
         </button>
 
         {showRules && (
-          <div className="p-4 pt-1 border-t border-white/5 space-y-3 bg-black/25 text-[11px] text-gray-400 leading-relaxed font-semibold animate-fade-in">
+          <div className="p-4 pt-1 border-t border-white/5 space-y-3 bg-black/25 text-[11px] text-zinc-100 leading-relaxed font-semibold animate-fade-in">
             <div className="flex items-start gap-2.5">
               <span className="flex-shrink-0 w-6 h-6 bg-yellow-400 text-slate-950 rounded-full font-black flex items-center justify-center text-[10px]">10</span>
               <div>
-                <p className="font-extrabold text-gray-200">Placar Exato</p>
-                <p className="text-[10px] text-gray-500">Acertou o resultado exato na régua (ex: palpito 2-1, termina 2-1)!</p>
+                <p className="font-extrabold text-white">Placar Exato</p>
+                <p className="text-[10px] text-zinc-300 font-medium">Acertou o resultado exato na régua (ex: palpito 2-1, termina 2-1)!</p>
               </div>
             </div>
 
             <div className="flex items-start gap-2.5">
               <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-slate-950 rounded-full font-black flex items-center justify-center text-[10px]">07</span>
               <div>
-                <p className="font-extrabold text-gray-200">Vencedor + Saldo de Gols</p>
-                <p className="text-[10px] text-gray-500">Acertou quem ganhou e a diferença exata de gols (ex: palpito 2-0, termina 3-1).</p>
+                <p className="font-extrabold text-white">Vencedor + Saldo de Gols</p>
+                <p className="text-[10px] text-zinc-300 font-medium">Acertou quem ganhou e a diferença exata de gols (ex: palpito 2-0, termina 3-1).</p>
               </div>
             </div>
 
             <div className="flex items-start gap-2.5">
               <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-slate-950 rounded-full font-black flex items-center justify-center text-[10px]">05</span>
               <div>
-                <p className="font-extrabold text-gray-200">Vencedor / Empate Simples</p>
-                <p className="text-[10px] text-gray-500">Acertou quem ganhou de forma simples ou se foi empate (ex: jogou 1-0, termina 3-0).</p>
+                <p className="font-extrabold text-white">Vencedor / Empate Simples</p>
+                <p className="text-[10px] text-zinc-300 font-medium">Acertou quem ganhou de forma simples ou se foi empate (ex: jogou 1-0, termina 3-0).</p>
               </div>
             </div>
 
             <div className="flex items-start gap-2.5">
               <span className="flex-shrink-0 w-6 h-6 bg-cyan-400 text-slate-950 rounded-full font-black flex items-center justify-center text-[10px]">+3</span>
               <div>
-                <p className="font-extrabold text-yellow-500">Bônus de 1º Gol</p>
-                <p className="text-[10px] text-gray-500">Acertou qual seleção ou se ninguém marcou o primeiro gol do confronto.</p>
+                <p className="font-extrabold text-yellow-400">Bônus de 1º Gol</p>
+                <p className="text-[10px] text-zinc-300 font-medium">Acertou qual seleção ou se ninguém marcou o primeiro gol do confronto.</p>
               </div>
             </div>
           </div>

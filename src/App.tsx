@@ -273,23 +273,38 @@ export default function App() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 pointer-events-none overflow-hidden -z-10 bg-radial from-blue-500/10 via-blue-800/2 to-transparent" />
 
       {/* Main Container Header */}
-      <header className="border-b border-zinc-700/50 bg-zinc-800/90 backdrop-blur-md sticky top-0 z-30">
+      <header className="border-b border-zinc-200 bg-[#F4F4F4]/95 backdrop-blur-md sticky top-0 z-30 shadow-sm">
         <div className="w-full max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <SoccerBallLogo className="w-10 h-10" />
+            <svg viewBox="0 0 120 80" className="w-12 h-8 filter drop-shadow-[0_2px_8px_rgba(78,148,216,0.3)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill="#4E94D8" />
+              <text
+                x="58"
+                y="50"
+                fill="white"
+                fontSize="34"
+                fontWeight="900"
+                fontStyle="italic"
+                fontFamily="system-ui, -apple-system, sans-serif"
+                textAnchor="middle"
+                style={{ letterSpacing: "-1.5px" }}
+              >
+                WL
+              </text>
+            </svg>
             <div>
-              <h1 className="text-base font-black text-white tracking-wider uppercase leading-none">
+              <h1 className="text-base font-black text-slate-800 tracking-wider uppercase leading-none">
                 BOLÃO WL
               </h1>
-              <p className="text-[9px] text-zinc-300 font-bold uppercase tracking-widest mt-0.5">
+              <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
                 Bolão Esportivo Copa 2026
               </p>
             </div>
           </div>
 
           {/* Navigation Bar */}
-          <nav className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
+          <nav className="flex items-center gap-1 bg-zinc-200/60 p-1 rounded-xl border border-zinc-300/40">
             {[
               { id: "betting", label: "Palpitar", icon: Gamepad2 },
               { id: "leaderboard", label: "Ranking", icon: Trophy },
@@ -312,7 +327,7 @@ export default function App() {
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                     isActive
                       ? "bg-blue-600 text-white font-black shadow-md shadow-blue-500/10"
-                      : "text-gray-400 hover:text-white"
+                      : "text-zinc-600 hover:text-slate-900 hover:bg-zinc-200/80"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -399,7 +414,7 @@ export default function App() {
                         {/* Passo 1: Placar do palpite */}
                         {selectedGameObj && (
                           <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5 animate-fade-in">
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                             <p className="text-[10px] font-black text-zinc-100 uppercase tracking-widest flex items-center gap-1.5">
                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
                                1. INFORME SEU PLACAR
                              </p>
@@ -408,7 +423,7 @@ export default function App() {
                                {/* Mandante */}
                                <div className="flex flex-col items-center text-center w-28">
                                  <div className="text-2xl mb-1 select-none">{getTeamFlag(selectedGameObj.homeTeam)}</div>
-                                 <p className="text-gray-300 font-black text-xs uppercase mb-2 truncate max-w-full">{selectedGameObj.homeTeam}</p>
+                                 <p className="text-white font-black text-xs uppercase mb-2 truncate max-w-full">{selectedGameObj.homeTeam}</p>
                                  
                                  <div className="flex items-center bg-slate-950 border border-white/10 rounded-full p-1 shadow-inner">
                                    <button
@@ -437,12 +452,12 @@ export default function App() {
                                  </div>
                                </div>
 
-                               <span className="text-sm font-black text-yellow-500 select-none bg-yellow-500/10 border border-yellow-500/20 rounded-full w-7 h-7 flex items-center justify-center mt-6">X</span>
+                               <span className="text-sm font-black text-yellow-400 select-none bg-yellow-500/10 border border-yellow-500/20 rounded-full w-7 h-7 flex items-center justify-center mt-6">X</span>
 
                                {/* Visitante */}
                                <div className="flex flex-col items-center text-center w-28">
                                  <div className="text-2xl mb-1 select-none">{getTeamFlag(selectedGameObj.awayTeam)}</div>
-                                 <p className="text-gray-300 font-black text-xs uppercase mb-2 truncate max-w-full">{selectedGameObj.awayTeam}</p>
+                                 <p className="text-white font-black text-xs uppercase mb-2 truncate max-w-full">{selectedGameObj.awayTeam}</p>
                                  
                                  <div className="flex items-center bg-slate-950 border border-white/10 rounded-full p-1 shadow-inner">
                                    <button
@@ -474,8 +489,8 @@ export default function App() {
 
                              {/* Escolha 1º gol */}
                              <div className="border-t border-white/5 pt-3.5 space-y-2">
-                               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 leading-normal">
-                                 2. QUEM FARÁ O PRIMEIRO GOL DA PARTIDA? (+3 pts extras)
+                               <label className="block text-[10px] font-extrabold text-zinc-100 uppercase tracking-widest mb-1.5 leading-normal">
+                                 2. QUAL O TIME QUE FARÁ O PRIMEIRO GOL DA PARTIDA? (+3 pts extras)
                                </label>
                               <div className="grid grid-cols-3 gap-2">
                                 {[
@@ -504,13 +519,13 @@ export default function App() {
 
                         {/* Passo 3: Informações de Cadastro ao final */}
                         <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5 animate-fade-in">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                          <p className="text-[10px] font-black text-zinc-100 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                             3. SEUS DADOS PARA CONTATO
                           </p>
                           <div className="space-y-3.5">
                             <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Nome Completo</label>
+                              <label className="block text-[10px] font-extrabold text-zinc-100 uppercase tracking-wider mb-1">Nome Completo</label>
                               <input
                                 type="text"
                                 required
@@ -524,7 +539,7 @@ export default function App() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">WhatsApp</label>
+                              <label className="block text-[10px] font-extrabold text-zinc-100 uppercase tracking-wider mb-1">WhatsApp</label>
                               <input
                                 type="tel"
                                 required
@@ -605,59 +620,72 @@ export default function App() {
 
             {/********************* VIEW: REGRAS DO BOLÃO *********************/}
             {activeTab === "rules" && (
-              <div className="bg-[#111111] border border-white/10 rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in text-xs text-slate-300">
+              <div className="bg-[#111111] border border-white/10 rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in text-xs text-zinc-100">
                 <div className="flex items-center gap-2 pb-2 border-b border-white/5">
                   <Compass className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-sm font-bold text-gray-200">REGRAS DO BOLÃO • COPA 2026</h3>
+                  <h3 className="text-sm font-extrabold text-white">REGRAS DO BOLÃO • COPA 2026</h3>
                 </div>
 
                 <div className="space-y-4">
                   {/* Pontuações */}
                   <div className="space-y-2 bg-black/20 p-3.5 rounded-2xl border border-white/5">
-                    <h4 className="font-bold text-blue-400 text-xs">SISTEMA DE PONTUAÇÃO</h4>
-                    <p className="text-[11px] text-gray-400">As pontuações são únicas (não cumulativas no placar fundamental, conta o maior lance):</p>
+                    <h4 className="font-extrabold text-blue-400 text-xs">SISTEMA DE PONTUAÇÃO</h4>
+                    <p className="text-[11px] text-zinc-200">As pontuações são únicas (não cumulativas no placar fundamental, conta o maior lance):</p>
                     <ul className="space-y-2.5 pl-1.5 mt-2.5">
                       <li className="flex items-start gap-2">
                         <span className="flex-shrink-0 w-5 h-5 bg-blue-600 text-white rounded-full font-bold flex items-center justify-center text-[10px]">10</span>
                         <div>
-                          <p className="font-bold text-gray-100">Placar Exato (PE)</p>
-                          <p className="text-[10px] text-gray-400 leading-normal">Acertou exatamente o resultado exato na régua (ex: jogou 2-1, final 2-1).</p>
+                          <p className="font-extrabold text-white">Placar Exato (PE)</p>
+                          <p className="text-[10px] text-zinc-300 font-medium leading-normal">Acertou exatamente o resultado exato na régua (ex: jogou 2-1, final 2-1).</p>
                         </div>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="flex-shrink-0 w-5 h-5 bg-yellow-500 text-slate-950 rounded-full font-bold flex items-center justify-center text-[10px]">07</span>
                         <div>
-                          <p className="font-bold text-gray-100">Vencedor + Saldo de Gols</p>
-                          <p className="text-[10px] text-gray-400 leading-normal">Acertou quem ganhou a partida e a diferença exata de gols (ex: palpito 2-0, terminou 3-1).</p>
+                          <p className="font-extrabold text-white">Vencedor + Saldo de Gols</p>
+                          <p className="text-[10px] text-zinc-300 font-medium leading-normal">Acertou quem ganhou a partida e a diferença exata de gols (ex: palpito 2-0, terminou 3-1).</p>
                         </div>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="flex-shrink-0 w-5 h-5 bg-amber-600 text-slate-950 rounded-full font-bold flex items-center justify-center text-[10px]">05</span>
                         <div>
-                          <p className="font-bold text-gray-100">Vencedor / Empate Simples</p>
-                          <p className="text-[10px] text-gray-400 leading-normal">Acertou somente quem faturou a vitória ou se empatou de forma simples (ex: jogou 1-0 m, terminou 3-0).</p>
+                          <p className="font-extrabold text-white">Vencedor / Empate Simples</p>
+                          <p className="text-[10px] text-zinc-300 font-medium leading-normal">Acertou somente quem faturou a vitória ou se empatou de forma simples (ex: jogou 1-0 m, terminou 3-0).</p>
                         </div>
                       </li>
                       <li className="flex items-start gap-2 border-t border-white/5 pt-2 mt-2 leading-none">
                         <span className="flex-shrink-0 w-5 h-5 bg-indigo-500 text-white rounded-full font-bold flex items-center justify-center text-[10px]">+3</span>
                         <div className="pt-0.5">
-                          <p className="font-bold text-indigo-300">Bônus de Primeiro Goalscorer</p>
-                          <p className="text-[10px] text-gray-400 leading-normal">Soma 3 pontos secos adicionais se você acertar o time ou seleção que inaugurar o primeiro gol.</p>
+                          <p className="font-extrabold text-indigo-300">Bônus de Primeiro Goalscorer</p>
+                          <p className="text-[10px] text-zinc-300 font-medium leading-normal">Soma 3 pontos secos adicionais se você acertar o time ou seleção que inaugurar o primeiro gol.</p>
                         </div>
                       </li>
                     </ul>
                   </div>
 
                   {/* Como Participar */}
-                  <div className="space-y-1 bg-black/20 p-3.5 rounded-2xl border border-white/5">
-                    <h4 className="font-bold text-blue-400 text-xs mb-1.5">COMO VALIDAR SUA PARTICIPAÇÃO</h4>
+                  <div className="space-y-1 bg-black/20 p-3.5 rounded-2xl border border-white/5 text-zinc-200">
+                    <h4 className="font-extrabold text-blue-400 text-xs mb-1.5">COMO VALIDAR SUA PARTICIPAÇÃO</h4>
                     <p className="text-[11px] leading-relaxed">
-                      1. Registre seu palpite na aba <span className="text-blue-400 font-bold">Palpitar</span>.<br />
-                      2. Copie a chave PIX ou escaneie o QR Code estático exibido no valor de <span className="text-yellow-400 font-bold">R$ 10,00</span> por palpite.<br />
+                      1. Registre seu palpite na aba <span className="text-blue-400 font-extrabold">Palpitar</span>.<br />
+                      2. Copie a chave PIX ou escaneie o QR Code estático exibido no valor de <span className="text-yellow-400 font-extrabold">R$ 10,00</span> por palpite. Cada participante poderá ter apenas um único palpite cadastrado por jogo (seja ele com o PIX confirmado ou aguardando confirmação).<br />
                       3. Efetue o pagamento em seu banco.<br />
-                      4. Clique em <span className="text-blue-400 font-bold">"Enviar Comprovante no WhatsApp"</span> para abrir o chat pré-preenchido e encaminhe o recibo ao administrador.<br />
-                      5. Assim que o administrador validar, seu palpite mudará para <span className="text-blue-400 font-bold">Confirmado</span> e começará a somar pontos no Ranking Geral!
+                      4. Clique em <span className="text-blue-400 font-extrabold">"Enviar Comprovante no WhatsApp"</span> para abrir o chat pré-preenchido e encaminhe o recibo ao administrador.<br />
+                      5. Assim que o administrador validar, seu palpite mudará para <span className="text-blue-400 font-extrabold">Confirmado</span> e começará a somar pontos no Ranking Geral!
                     </p>
+                  </div>
+
+                  {/* Informações Importantes / Descontração */}
+                  <div className="space-y-2 bg-yellow-500/10 p-3.5 rounded-2xl border border-yellow-500/20 text-yellow-150">
+                    <h4 className="font-extrabold text-xs flex items-center gap-1.5 text-yellow-300">
+                      <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-bounce"></span>
+                      INFORMAÇÕES IMPORTANTES
+                    </h4>
+                    <ul className="list-disc pl-4 space-y-1 text-[11px] leading-relaxed text-zinc-200 font-semibold">
+                      <li>Esta atividade é exclusivamente uma <span className="text-white font-extrabold">atividade de descontração e entretenimento</span> para a comunidade WL.</li>
+                      <li>O <span className="text-white font-extrabold">horário limite</span> para registro de palpites e envio de comprovantes se encerra rigorosamente no <span className="text-white font-extrabold">horário de início de cada jogo</span>.</li>
+                      <li>Cada participante poderá ter <span className="text-white font-extrabold">apenas um único palpite cadastrado por jogo</span>, esteja ele com o PIX confirmado ou ainda pendente / aguardando confirmação.</li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -681,13 +709,28 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-zinc-800/80 bg-zinc-900 py-6 text-center text-[10px] text-zinc-400 font-medium">
+      <footer className="border-t border-zinc-200 bg-[#F4F4F4] py-6 text-center text-[10px] text-slate-700 font-medium font-sans shadow-inner">
         <div className="max-w-4xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2">
-            <SoccerBallLogo className="w-6 h-6 opacity-80" />
-            <p className="text-[10px] text-zinc-400">© 2026 BOLÃO WL. Todos os direitos reservados.</p>
+            <svg viewBox="0 0 120 80" className="w-8 h-5 filter opacity-80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill="#4E94D8" />
+              <text
+                x="58"
+                y="50"
+                fill="white"
+                fontSize="34"
+                fontWeight="900"
+                fontStyle="italic"
+                fontFamily="system-ui, -apple-system, sans-serif"
+                textAnchor="middle"
+                style={{ letterSpacing: "-1.5px" }}
+              >
+                WL
+              </text>
+            </svg>
+            <p className="text-[10px] text-slate-700">© 2026 BOLÃO WL. Todos os direitos reservados.</p>
           </div>
-          <p className="text-[9px] text-zinc-500">
+          <p className="text-[9px] text-zinc-600">
             Organização autorizada • Jogue com responsabilidade • Taxa de R$ 10,00 por Palpite
           </p>
         </div>
