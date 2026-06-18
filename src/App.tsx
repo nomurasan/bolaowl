@@ -29,6 +29,7 @@ import PixPayment from "./components/PixPayment";
 import Leaderboard from "./components/Leaderboard";
 import AdminPanel from "./components/AdminPanel";
 import BetsOverview from "./components/BetsOverview";
+import SoccerBallLogo from "./components/SoccerBallLogo";
 import { getTeamFlag } from "./lib/flags";
 
 export default function App() {
@@ -276,22 +277,7 @@ export default function App() {
         <div className="w-full max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <svg viewBox="0 0 120 80" className="w-12 h-8 filter drop-shadow-[0_2px_8px_rgba(78,148,216,0.3)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill="#4E94D8" />
-              <text
-                x="58"
-                y="50"
-                fill="white"
-                fontSize="34"
-                fontWeight="900"
-                fontStyle="italic"
-                fontFamily="system-ui, -apple-system, sans-serif"
-                textAnchor="middle"
-                style={{ letterSpacing: "-1.5px" }}
-              >
-                WL
-              </text>
-            </svg>
+            <SoccerBallLogo className="w-10 h-10" />
             <div>
               <h1 className="text-base font-black text-white tracking-wider uppercase leading-none">
                 BOLÃO WL
@@ -698,22 +684,7 @@ export default function App() {
       <footer className="border-t border-zinc-800/80 bg-zinc-900 py-6 text-center text-[10px] text-zinc-400 font-medium">
         <div className="max-w-4xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2">
-            <svg viewBox="0 0 120 80" className="w-8 h-5 filter opacity-80" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill="#4E94D8" />
-              <text
-                x="58"
-                y="50"
-                fill="white"
-                fontSize="34"
-                fontWeight="900"
-                fontStyle="italic"
-                fontFamily="system-ui, -apple-system, sans-serif"
-                textAnchor="middle"
-                style={{ letterSpacing: "-1.5px" }}
-              >
-                WL
-              </text>
-            </svg>
+            <SoccerBallLogo className="w-6 h-6 opacity-80" />
             <p className="text-[10px] text-zinc-400">© 2026 BOLÃO WL. Todos os direitos reservados.</p>
           </div>
           <p className="text-[9px] text-zinc-500">
