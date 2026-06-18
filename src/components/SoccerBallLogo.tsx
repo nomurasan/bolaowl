@@ -10,7 +10,6 @@ export default function SoccerBallLogo({ className = "w-12 h-12" }: SoccerBallLo
       viewBox="0 0 100 100"
       className={`${className} filter drop-shadow-[0_3px_6px_rgba(59,130,246,0.35)]`}
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
         {/* Sphere base gradient */}
