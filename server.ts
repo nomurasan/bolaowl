@@ -9,6 +9,9 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+// Configurar Express para confiar no proxy reverso do Easypanel/Cloud Run
+app.set("trust proxy", true);
+
 // Increase payload limit for base64 receipt uploads (standard is 100kb, receipts can be larger)
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ limit: "15mb", extended: true }));
