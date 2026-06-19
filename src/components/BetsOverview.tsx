@@ -36,6 +36,27 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
     return map;
   }, [games]);
 
+  // Stats calculations for public dashboard (transparency)
+  const stats = useMemo(() => {
+    const totalBets = bets.length;
+    const confirmedBets = bets.filter((b) => b.status === "confirmed");
+    const pendingBets = bets.filter((b) => b.status === "pending");
+    const cashCollected = confirmedBets.length * 10;
+    const uniquePhones = new Set(bets.map((b) => b.userPhone)).size;
+    const avgBetsPerGame = games.length > 0 ? (totalBets / games.length).toFixed(1) : "0";
+    const pendingAmount = pendingBets.length * 10;
+    
+    return {
+      totalBets,
+      confirmedCount: confirmedBets.length,
+      pendingCount: pendingBets.length,
+      cashCollected,
+      uniquePhones,
+      avgBetsPerGame,
+      pendingAmount
+    };
+  }, [bets, games]);
+
   // Mask user phone for privacy while keeping useful identifying digits
   const formatPhone = (phone: string) => {
     const cleaned = phone.replace(/\D/g, "");
@@ -115,6 +136,60 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
         <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
           {filteredAndSortedBets.length} {filteredAndSortedBets.length === 1 ? "Palpite" : "Palpites"}
         </span>
+      </div>
+
+      {/* Transparency Dashboard Widget Grid */}
+      <div className="space-y-3">
+        <p className="text-[9px] font-black tracking-widest text-[#a1a1aa] uppercase flex items-center gap-1.5 leading-none">
+          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shrink-0"></span>
+          Painel de Transparência WL
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {/* Cash Collected Card */}
+          <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-3 flex flex-col justify-between shadow-md">
+            <span className="text-[8px] sm:text-[9px] uppercase font-black text-blue-400 tracking-wider">Arrecadado PIX</span>
+            <p className="text-sm min-[360px]:text-base sm:text-lg font-black font-mono text-white mt-1">
+              R$ {stats.cashCollected.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+
+          {/* Confirmed Bets Card */}
+          <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-3 flex flex-col justify-between shadow-md">
+            <span className="text-[8px] sm:text-[9px] uppercase font-black text-yellow-500 tracking-wider">Confirmados</span>
+            <p className="text-sm min-[360px]:text-base sm:text-lg font-black font-mono text-white mt-1">
+              {stats.confirmedCount} <span className="text-[8px] text-zinc-500 font-bold uppercase ml-1">Ativos</span>
+            </p>
+          </div>
+
+          {/* Unique Participants Card */}
+          <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-3 flex flex-col justify-between shadow-md">
+            <span className="text-[8px] sm:text-[9px] uppercase font-black text-zinc-400 tracking-wider">Participantes</span>
+            <p className="text-sm min-[360px]:text-base sm:text-lg font-black font-mono text-white mt-1">
+              {stats.uniquePhones} <span className="text-[8px] text-zinc-500 font-bold uppercase ml-1">Únicos</span>
+            </p>
+          </div>
+
+          {/* Pending or General Stats Card */}
+          <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-3 flex flex-col justify-between shadow-md">
+            <span className="text-[8px] sm:text-[9px] uppercase font-black text-zinc-400 tracking-wider">Aguardando PIX</span>
+            <p className="text-sm min-[360px]:text-base sm:text-lg font-black font-mono text-white mt-1">
+              {stats.pendingCount} <span className="text-[8px] text-zinc-500 font-bold uppercase ml-1">Pendentes</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Competition quick stats bar */}
+        <div className="bg-white/[0.02] border border-white/5 rounded-xl px-3.5 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5 items-center justify-between text-[10px] text-zinc-400">
+          <p className="flex items-center gap-1">
+            <span className="text-zinc-500 font-bold">Média de palpites por jogo:</span>
+            <span className="text-white font-extrabold font-mono">{stats.avgBetsPerGame}</span>
+          </p>
+          <p className="flex items-center gap-1">
+            <span className="text-zinc-500 font-bold">Total cadastrado:</span>
+            <span className="text-white font-extrabold font-mono">{stats.totalBets}</span>
+            <span className="text-[8px] text-zinc-500">({stats.pendingCount} por confirmar)</span>
+          </p>
+        </div>
       </div>
 
       {/* Search Input */}
