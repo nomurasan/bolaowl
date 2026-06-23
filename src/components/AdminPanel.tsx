@@ -54,7 +54,23 @@ export default function AdminPanel({
   const [pixKey, setPixKey] = useState(currentPixSetting.pixKey);
   const [pixReceiver, setPixReceiver] = useState(currentPixSetting.pixReceiver);
   const [adminPhone, setAdminPhone] = useState(currentPixSetting.adminPhone || "556186267773");
+  const [entryFee, setEntryFee] = useState<number>(currentPixSetting.entryFee ?? 10);
+  const [pixCopiaCola, setPixCopiaCola] = useState(currentPixSetting.pixCopiaCola || "");
+  const [qrCodeUrl, setQrCodeUrl] = useState(currentPixSetting.qrCodeUrl || "");
   const [settingsSuccess, setSettingsSuccess] = useState("");
+
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setQrCodeUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Game Form states
   const [gameFormOpen, setGameFormOpen] = useState(false);
@@ -76,6 +92,28 @@ export default function AdminPanel({
   // Bet filters
   const [betSearch, setBetSearch] = useState("");
   const [betStatusFilter, setBetStatusFilter] = useState<"all" | "pending" | "confirmed">("all");
+  const [betGameFilter, setBetGameFilter] = useState<string>("all");
+
+  const activeGame = (games || []).find((g) => g && g.isActive);
+  useEffect(() => {
+    if (games && games.length > 0) {
+      if (activeGame) {
+        setBetGameFilter(activeGame.id);
+      } else {
+        setBetGameFilter("all");
+      }
+    }
+  }, [games, activeGame]);
+
+  const countStats = React.useMemo(() => {
+    const safeBets = bets || [];
+    const relevantBets = betGameFilter === "all" ? safeBets : safeBets.filter(b => b && b.gameId === betGameFilter);
+    return {
+      all: relevantBets.length,
+      pending: relevantBets.filter(b => b && b.status === "pending").length,
+      confirmed: relevantBets.filter(b => b && b.status === "confirmed").length
+    };
+  }, [bets, betGameFilter]);
 
   // Deletion States
   const [betToDelete, setBetToDelete] = useState<Bet | null>(null);
@@ -90,6 +128,9 @@ export default function AdminPanel({
     setPixKey(currentPixSetting.pixKey);
     setPixReceiver(currentPixSetting.pixReceiver);
     setAdminPhone(currentPixSetting.adminPhone || "556186267773");
+    setEntryFee(currentPixSetting.entryFee ?? 10);
+    setPixCopiaCola(currentPixSetting.pixCopiaCola || "");
+    setQrCodeUrl(currentPixSetting.qrCodeUrl || "");
   }, [currentPixSetting]);
 
   // Verificar autenticação via chamada de API segura no backend
@@ -328,33 +369,48 @@ export default function AdminPanel({
       alert("Chave e favorecido são obrigatórios!");
       return;
     }
-    await saveSettings({ pixKey, pixReceiver, adminPhone });
+    await saveSettings({
+      pixKey,
+      pixReceiver,
+      adminPhone,
+      entryFee: Number(entryFee) || 10,
+      pixCopiaCola,
+      qrCodeUrl,
+    });
     onRefreshData();
     setSettingsSuccess("Configurações atualizadas com sucesso!");
     setTimeout(() => setSettingsSuccess(""), 4000);
   };
 
   // Estatísticas Rápidas do Painel
-  const totalBetsCount = bets.length;
-  const confirmedBets = bets.filter((b) => b.status === "confirmed");
-  const pendingBets = bets.filter((b) => b.status === "pending");
-  const totalCashCollected = confirmedBets.length * 10;
-  const uniqueParticipants = new Set(bets.map((b) => b.userPhone)).size;
+  const totalBetsCount = (bets || []).length;
+  const confirmedBets = (bets || []).filter((b) => b && b.status === "confirmed");
+  const pendingBets = (bets || []).filter((b) => b && b.status === "pending");
+  const feeMult = currentPixSetting.entryFee !== undefined ? currentPixSetting.entryFee : 10;
+  const totalCashCollected = confirmedBets.length * feeMult;
+  const uniqueParticipants = new Set((bets || []).map((b) => b?.userPhone || "N/A")).size;
 
   // Filtrar Palpites cadastrados na listagem
-  const filteredBets = bets.filter((b) => {
-    const game = games.find((g) => g.id === b.gameId);
-    const gameText = game ? `${game.homeTeam} x ${game.awayTeam}`.toLowerCase() : "";
+  const filteredBets = (bets || []).filter((b) => {
+    if (!b) return false;
+    const game = (games || []).find((g) => g && g.id === b.gameId);
+    const gameText = game ? `${game.homeTeam || ""} x ${game.awayTeam || ""}`.toLowerCase() : "";
     
+    const rawName = b.userName || "";
+    const rawPhone = b.userPhone || "";
+
     const matchesSearch =
-      b.userName.toLowerCase().includes(betSearch.toLowerCase()) ||
-      b.userPhone.includes(betSearch) ||
+      rawName.toLowerCase().includes(betSearch.toLowerCase()) ||
+      rawPhone.includes(betSearch) ||
       gameText.includes(betSearch.toLowerCase());
 
     const matchesStatus =
       betStatusFilter === "all" || b.status === betStatusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesGame =
+      betGameFilter === "all" || b.gameId === betGameFilter;
+
+    return matchesSearch && matchesStatus && matchesGame;
   });
 
   if (!isAuthenticated) {
@@ -487,7 +543,7 @@ export default function AdminPanel({
                 <p>Média de palpites por jogo: <span className="text-white font-bold font-mono">
                   {games.length > 0 ? (totalBetsCount / games.length).toFixed(1) : 0}
                 </span></p>
-                <p className="mt-1">Inscrições pendentes: <span className="text-white font-bold font-mono">{pendingBets.length} (R$ {pendingBets.length * 10},00)</span></p>
+                <p className="mt-1">Inscrições pendentes: <span className="text-white font-bold font-mono">{pendingBets.length} (R$ {(pendingBets.length * feeMult).toFixed(2).replace(".", ",")})</span></p>
               </div>
             </div>
           </div>
@@ -812,26 +868,101 @@ export default function AdminPanel({
       {activeTab === "bets" && (
         <div className="space-y-4 animate-fade-in">
           {/* Filters Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
+          <div className="space-y-3">
+            {/* Search Input */}
+            <div className="relative w-full">
               <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-white/40" />
               <input
                 type="text"
                 placeholder="Buscar por nome ou celular do participante..."
                 value={betSearch}
                 onChange={(e) => setBetSearch(e.target.value)}
-                className="w-full bg-[#050505] text-xs text-white border border-white/10 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-blue-500 transition-all font-medium"
+                className="w-full bg-[#050505] text-xs text-white border border-white/10 rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-blue-500 transition-all font-medium"
               />
             </div>
-            <select
-              value={betStatusFilter}
-              onChange={(e: any) => setBetStatusFilter(e.target.value)}
-              className="bg-[#050505] border border-white/10 text-xs text-white rounded-xl p-3 outline-none font-bold focus:border-blue-500 cursor-pointer uppercase tracking-wider text-[10px]"
-            >
-              <option value="all">Todas as Inscrições</option>
-              <option value="pending">Aguardando PIX (Pendentes)</option>
-              <option value="confirmed">PIX Confirmado (Ativos)</option>
-            </select>
+
+            {/* Selectors Row */}
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+              {/* Game Selector */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-grow max-w-full lg:max-w-md">
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest whitespace-nowrap">Confronto:</span>
+                <select
+                  value={betGameFilter}
+                  onChange={(e) => setBetGameFilter(e.target.value)}
+                  className="w-full bg-[#050505] border border-white/10 text-xs text-white rounded-xl p-3 outline-none font-bold focus:border-blue-500 cursor-pointer uppercase tracking-wider text-[10px]"
+                >
+                  <option value="all">Todas as Partidas</option>
+                  {games.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Filters as Segmented Button-Tabs with Badge Counts */}
+              <div className="flex flex-row items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none shrink-0">
+                {/* Todas */}
+                <button
+                  type="button"
+                  onClick={() => setBetStatusFilter("all")}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-[10px] uppercase tracking-wider font-extrabold transition-all cursor-pointer select-none shrink-0 ${
+                    betStatusFilter === "all"
+                      ? "bg-blue-600/15 border-blue-500/40 text-blue-400 shadow-sm"
+                      : "bg-[#050505] border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Todas</span>
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                    betStatusFilter === "all" ? "bg-blue-500/20 text-blue-300" : "bg-white/5 text-zinc-500"
+                  }`}>
+                    {countStats.all}
+                  </span>
+                </button>
+
+                {/* Pendentes */}
+                <button
+                  type="button"
+                  onClick={() => setBetStatusFilter("pending")}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-[10px] uppercase tracking-wider font-extrabold transition-all cursor-pointer select-none shrink-0 ${
+                    betStatusFilter === "pending"
+                      ? "bg-yellow-600/15 border-yellow-500/40 text-yellow-500 shadow-sm"
+                      : "bg-[#050505] border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />
+                  <span>Pendentes</span>
+                  {countStats.pending > 0 && (
+                    <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse" />
+                  )}
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                    betStatusFilter === "pending" ? "bg-yellow-500/20 text-yellow-400" : "bg-white/5 text-zinc-500"
+                  }`}>
+                    {countStats.pending}
+                  </span>
+                </button>
+
+                {/* Confirmadas */}
+                <button
+                  type="button"
+                  onClick={() => setBetStatusFilter("confirmed")}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-[10px] uppercase tracking-wider font-extrabold transition-all cursor-pointer select-none shrink-0 ${
+                    betStatusFilter === "confirmed"
+                      ? "bg-green-600/15 border-green-500/40 text-green-400 shadow-sm"
+                      : "bg-[#050505] border-white/10 text-zinc-400 hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                  <span>Confirmados</span>
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                    betStatusFilter === "confirmed" ? "bg-green-500/20 text-green-400" : "bg-white/5 text-zinc-500"
+                  }`}>
+                    {countStats.confirmed}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* List of bets table */}
@@ -917,21 +1048,39 @@ export default function AdminPanel({
         <div className="space-y-4 animate-fade-in">
           <form onSubmit={handleSavePixSettings} className="bg-[#050505]/40 border border-white/10 rounded-3xl p-5 space-y-4 text-xs">
             <h4 className="text-xs font-black text-blue-500 flex items-center gap-1.5 uppercase tracking-wider pb-1 border-b border-white/10">
-              <QrCode className="w-4 h-4 text-blue-500" /> ATUALIZAR DADOS DO QR CODE PIX
+              <QrCode className="w-4 h-4 text-blue-500" /> ATUALIZAR DADOS DO QR CODE PIX E INSCRIÇÃO
             </h4>
 
-            <div>
-              <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
-                Chave PIX (Telefone, E-mail, CNPJ ou Aleatória)
-              </label>
-              <input
-                type="text"
-                required
-                value={pixKey}
-                onChange={(e) => setPixKey(e.target.value)}
-                placeholder="Insira a chave..."
-                className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono font-bold focus:outline-none focus:border-blue-500"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                  Chave PIX (Telefone, E-mail, CNPJ ou Aleatória)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={pixKey}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  placeholder="Insira a chave..."
+                  className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono font-bold focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                  Valor da Inscrição (R$)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={entryFee}
+                  onChange={(e) => setEntryFee(Number(e.target.value) || 0)}
+                  placeholder="Exemplo: 10.00"
+                  className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono font-bold focus:outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
 
             <div>
@@ -963,6 +1112,75 @@ export default function AdminPanel({
               <p className="text-[10px] text-zinc-500 mt-1 font-medium select-none">
                 Insira o DDI (55 para Brasil), o DDD e o número completo (ex: 556186267773). Não use espaços, hifens ou parênteses.
               </p>
+            </div>
+
+            <div>
+              <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                PIX Copia e Cola Estático Customizado (Opcional)
+              </label>
+              <textarea
+                value={pixCopiaCola}
+                onChange={(e) => setPixCopiaCola(e.target.value)}
+                placeholder="Insira o código Pix Copia e Cola longo caso queira sobrescrever a geração automática..."
+                className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono text-[11px] focus:outline-none focus:border-blue-500 h-20 placeholder:text-zinc-600"
+              />
+              <p className="text-[10px] text-zinc-500 mt-1 font-medium select-none">
+                Se deixado em branco, o sistema gerará o Pix Copia e Cola dinamicamente de acordo com a Chave PIX, o Nome do Favorecido e o Valor da Inscrição especificados acima.
+              </p>
+            </div>
+
+            <div className="space-y-4 border-t border-white/5 pt-4">
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                  Foto ou Imagem do QR Code PIX (Opcional)
+                </label>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-[#050505] border border-white/10 rounded-2xl p-4">
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrUpload}
+                      className="block w-full text-zinc-300 text-[11px] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[11px] file:font-semibold file:bg-blue-600/15 file:text-blue-400 hover:file:bg-blue-600/25 cursor-pointer file:cursor-pointer"
+                    />
+                    <div className="text-[10px] text-zinc-500 font-medium">
+                      Selecione um arquivo de imagem (PNG, JPEG, WEBP ou SVG) do seu QR Code PIX. Ele será lido e salvo no banco de dados.
+                    </div>
+                  </div>
+                  
+                  {qrCodeUrl && (
+                    <div className="flex flex-col items-center shrink-0 border border-white/10 bg-white p-2 rounded-xl">
+                      <img
+                        src={qrCodeUrl}
+                        alt="Preview QR Code"
+                        className="w-24 h-24 object-contain block rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQrCodeUrl("")}
+                        className="text-[9px] font-bold text-rose-500 mt-1.5 hover:underline"
+                      >
+                        Limpar Imagem
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                  OU URL da Imagem do QR Code Externa (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={qrCodeUrl.startsWith("data:") ? "" : qrCodeUrl}
+                  onChange={(e) => setQrCodeUrl(e.target.value)}
+                  placeholder="https://exemplo.com/qrcode.png"
+                  className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-blue-500 placeholder:text-zinc-600"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1 font-medium select-none">
+                  Insira uma URL pública direta para o seu QR Code, ou faça o upload de um arquivo acima. Se ambos estiverem limpos, o QR Code será gerado dinamicamente com base no Pix Copia e Cola configurado.
+                </p>
+              </div>
             </div>
 
             {settingsSuccess && (

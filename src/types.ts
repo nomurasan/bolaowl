@@ -36,6 +36,9 @@ export interface Setting {
   pixKey: string;
   pixReceiver: string;
   adminPhone?: string;
+  entryFee?: number;
+  pixCopiaCola?: string;
+  qrCodeUrl?: string;
 }
 
 export interface ParticipantScore {

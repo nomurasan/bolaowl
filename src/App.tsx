@@ -371,6 +371,9 @@ export default function App() {
                     pixKey={pixSetting.pixKey}
                     pixReceiver={pixSetting.pixReceiver}
                     adminPhone={pixSetting.adminPhone || "556186267773"}
+                    entryFee={pixSetting.entryFee}
+                    pixCopiaCola={pixSetting.pixCopiaCola}
+                    qrCodeUrl={pixSetting.qrCodeUrl}
                     onReset={() => setSubmittedBetInfo(null)}
                   />
                 ) : (
@@ -392,7 +395,7 @@ export default function App() {
                         </div>
                         <div>
                           <p className="text-[10px] text-zinc-300 uppercase tracking-widest font-black">Valor da Inscrição</p>
-                          <p className="text-lg font-black text-white leading-tight">R$ 10,00 <span className="text-xs font-semibold text-zinc-400">por palpite</span></p>
+                          <p className="text-lg font-black text-white leading-tight font-mono">R$ {(pixSetting.entryFee ?? 10).toFixed(2).replace(".", ",")} <span className="text-xs font-semibold text-zinc-400">por palpite</span></p>
                         </div>
                       </div>
                       <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/40 rounded-full px-3 py-1 font-black uppercase tracking-wider shadow-sm">
@@ -607,14 +610,14 @@ export default function App() {
             {/********************* VIEW: LEADERBOARD *********************/}
             {activeTab === "leaderboard" && (
               <div className="animate-fade-in">
-                <Leaderboard participants={ranking} />
+                <Leaderboard bets={bets} games={games} />
               </div>
             )}
 
             {/********************* VIEW: OVERVIEW DOS PALPITES *********************/}
             {activeTab === "overview" && (
               <div className="animate-fade-in">
-                <BetsOverview bets={bets} games={games} />
+                <BetsOverview bets={bets} games={games} entryFee={pixSetting.entryFee} />
               </div>
             )}
 
@@ -668,7 +671,7 @@ export default function App() {
                     <h4 className="font-extrabold text-blue-400 text-xs mb-1.5">COMO VALIDAR SUA PARTICIPAÇÃO</h4>
                     <p className="text-[11px] leading-relaxed">
                       1. Registre seu palpite na aba <span className="text-blue-400 font-extrabold">Palpitar</span>.<br />
-                      2. Copie a chave PIX ou escaneie o QR Code estático exibido no valor de <span className="text-yellow-400 font-extrabold">R$ 10,00</span> por palpite. Cada participante poderá ter apenas um único palpite cadastrado por jogo (seja ele com o PIX confirmado ou aguardando confirmação).<br />
+                      2. Copie a chave PIX ou escaneie o QR Code estático exibido no valor de <span className="text-yellow-400 font-extrabold font-mono">R$ {(pixSetting.entryFee ?? 10).toFixed(2).replace(".", ",")}</span> por palpite. Cada participante poderá ter até 2 palpites cadastrados por jogo (seja ele com o PIX confirmado ou aguardando confirmação).<br />
                       3. Efetue o pagamento em seu banco.<br />
                       4. Clique em <span className="text-blue-400 font-extrabold">"Enviar Comprovante no WhatsApp"</span> para abrir o chat pré-preenchido e encaminhe o recibo ao administrador.<br />
                       5. Assim que o administrador validar, seu palpite mudará para <span className="text-blue-400 font-extrabold">Confirmado</span> e começará a somar pontos no Ranking Geral!
@@ -684,7 +687,7 @@ export default function App() {
                     <ul className="list-disc pl-4 space-y-1 text-[11px] leading-relaxed text-zinc-200 font-semibold">
                       <li>Esta atividade é exclusivamente uma <span className="text-white font-extrabold">atividade de descontração e entretenimento</span> para a comunidade WL.</li>
                       <li>O <span className="text-white font-extrabold">horário limite</span> para registro de palpites e envio de comprovantes se encerra rigorosamente no <span className="text-white font-extrabold">horário de início de cada jogo</span>.</li>
-                      <li>Cada participante poderá ter <span className="text-white font-extrabold">apenas um único palpite cadastrado por jogo</span>, esteja ele com o PIX confirmado ou ainda pendente / aguardando confirmação.</li>
+                      <li>Cada participante poderá ter <span className="text-white font-extrabold">até 2 palpites cadastrados por jogo</span>, esteja ele com o PIX confirmado ou ainda pendente / aguardando confirmação.</li>
                     </ul>
                   </div>
                 </div>
@@ -731,7 +734,7 @@ export default function App() {
             <p className="text-[10px] text-slate-700">© 2026 BOLÃO WL. Todos os direitos reservados.</p>
           </div>
           <p className="text-[9px] text-zinc-600">
-            Organização autorizada • Jogue com responsabilidade • Taxa de R$ 10,00 por Palpite
+            Organização autorizada • Jogue com responsabilidade • Taxa de R$ {(pixSetting.entryFee ?? 10).toFixed(2).replace(".", ",")} por Palpite
           </p>
         </div>
       </footer>

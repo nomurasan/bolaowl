@@ -1,35 +1,73 @@
-import React, { useState } from "react";
-import { Trophy, Search, Hash, Medal, Star } from "lucide-react";
-import { ParticipantScore } from "../types";
+import React, { useState, useEffect } from "react";
+import { Trophy, Search, Hash, Medal, Star, Calendar } from "lucide-react";
+import { Game, Bet, ParticipantScore } from "../types";
+import { calculateRanking } from "../lib/dbHelper";
 
 interface LeaderboardProps {
-  participants: ParticipantScore[];
+  bets: Bet[];
+  games: Game[];
 }
 
-export default function Leaderboard({ participants }: LeaderboardProps) {
+export default function Leaderboard({ bets, games }: LeaderboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Encontrar o jogo ativo para definir o padrão inicial
+  const activeGame = (games || []).find((g) => g && g.isActive);
+  const [selectedGameId, setSelectedGameId] = useState<string>("");
+
+  // Sempre que a lista de jogos carregar ou mudar, definir a seleção inicial para o jogo ativo ou primeiro jogo
+  useEffect(() => {
+    if (games && games.length > 0) {
+      if (activeGame) {
+        setSelectedGameId(activeGame.id);
+      } else {
+        const firstGame = games[0];
+        if (firstGame) setSelectedGameId(firstGame.id);
+      }
+    }
+  }, [games, activeGame]);
+
+  const [participants, setParticipants] = useState<ParticipantScore[]>([]);
+
+  // Recalcular o ranking por partida selecionada de forma reativa e assíncrona
+  useEffect(() => {
+    async function updateRanking() {
+      // Filtrar palpites deste jogo específico
+      const filteredBets = (bets || []).filter((b) => b && b.gameId === selectedGameId);
+      const items = await calculateRanking(filteredBets);
+      setParticipants(items);
+    }
+    if (selectedGameId) {
+      updateRanking();
+    } else {
+      setParticipants([]);
+    }
+  }, [bets, selectedGameId]);
 
   // Filtrar participantes por nome ou telefone
-  const filteredParticipants = participants.filter(
-    (p) =>
-      p.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.userPhone.includes(searchTerm)
+  const filteredParticipants = (participants || []).filter(
+    (p) => {
+      if (!p) return false;
+      const rawName = p.userName || "";
+      const rawPhone = p.userPhone || "";
+      return (
+        rawName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rawPhone.includes(searchTerm)
+      );
+    }
   );
 
   // Formatar número de telefone de forma segura/privada para proteger dados do participante
-  // Exemplo: (11) 98765-4321 -> (11) 9****-4321
   const formatPrivatePhone = (phone: string) => {
+    if (!phone) return "";
     const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.length < 10) return phone; // Fallback se tiver formato inesperado
+    if (cleaned.length < 10) return phone;
     
-    // Obter partes
     const ddd = cleaned.substring(0, 2);
     const firstPart = cleaned.length === 11 ? cleaned.substring(2, 7) : cleaned.substring(2, 6);
     const lastPart = cleaned.substring(cleaned.length - 4);
     
-    // Ofuscar o miolo
     const obfuscated = firstPart.slice(0, 1) + "****";
-    
     return `(${ddd}) ${obfuscated}-${lastPart}`;
   };
 
@@ -45,9 +83,38 @@ export default function Leaderboard({ participants }: LeaderboardProps) {
           </div>
         </div>
         <span className="text-[9px] text-white/40 uppercase tracking-widest font-bold">
-          Ranking Global
+          Ranking por Jogo
         </span>
       </div>
+
+      {/* Seletor de Confronto */}
+      {games && games.length > 1 && (
+        <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="text-xs font-bold text-zinc-300">Selecione o Confronto:</span>
+          </div>
+          <select
+            value={selectedGameId}
+            onChange={(e) => setSelectedGameId(e.target.value)}
+            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer"
+          >
+            {games.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.homeTeam} x {g.awayTeam} {g.isActive ? "⭐ (Ativo)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Se houver apenas 1 jogo, mostramos fixo discretamente */}
+      {games && games.length === 1 && games[0] && (
+        <div className="bg-blue-950/20 border border-blue-500/10 rounded-xl p-3 text-[11px] font-semibold text-blue-400 flex items-center gap-2">
+          <Calendar className="w-4 h-4 shrink-0" />
+          Visualizando ranking do confronto: <span className="text-white font-extrabold">{games[0].homeTeam} x {games[0].awayTeam}</span>
+        </div>
+      )}
 
       {/* Busca */}
       <div className="relative">
@@ -63,12 +130,12 @@ export default function Leaderboard({ participants }: LeaderboardProps) {
         />
       </div>
 
-      {/* Tabela do Ranking */}
+      {/* Tabela do Ranking (por jogo selecionado) */}
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#050505]/40">
         <div className="max-h-96 overflow-y-auto divide-y divide-white/10">
           {filteredParticipants.length === 0 ? (
             <div className="p-8 text-center text-xs text-white/40 font-semibold uppercase tracking-wider">
-              Nenhum participante encontrado no ranking.
+              Nenhum participante encontrado no ranking para este jogo.
             </div>
           ) : (
             filteredParticipants.map((p, index) => {
@@ -153,15 +220,14 @@ export default function Leaderboard({ participants }: LeaderboardProps) {
       <div className="bg-[#050505] p-3.5 rounded-2xl border border-white/10 space-y-2">
         <h4 className="text-[9px] font-bold text-white/60 uppercase tracking-widest flex items-center gap-1.5">
           <Hash className="w-3.5 h-3.5 text-blue-500" />
-          Critérios de Desempate:
+          Critérios de Desempate (Por Partida):
         </h4>
         <ol className="text-[9px] text-white/40 list-decimal pl-4.5 space-y-1 font-medium leading-relaxed">
-          <li>Maior somatório de pontos gerais obtidos</li>
-          <li>Maior número de <span className="text-blue-500 font-bold">PE</span> (Placares Exatos acertados)</li>
-          <li>Maior volume de palpites pagos/confirmados</li>
+          <li>Maior somatório de pontos obtidos no confronto selecionado</li>
+          <li>Maior número de <span className="text-blue-500 font-bold">PE</span> (Placares Exatos acertados) na partida</li>
+          <li>Maior volume de palpites pagos/confirmados na partida</li>
         </ol>
       </div>
     </div>
   );
 }
-

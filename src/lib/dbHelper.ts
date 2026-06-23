@@ -90,6 +90,9 @@ export const DEFAULT_SETTINGS: Setting = {
   pixKey: "61986267773",
   pixReceiver: "Glaucia Leles - Banco Itaú",
   adminPhone: "556186267773",
+  entryFee: 10,
+  pixCopiaCola: "",
+  qrCodeUrl: "",
 };
 
 // Seeding executado na inicialização
@@ -197,6 +200,16 @@ export async function fetchGames(): Promise<Game[]> {
 export async function addGame(gameData: Omit<Game, "id" | "createdAt">): Promise<string> {
   const path = "games";
   try {
+    // Somente um jogo pode estar ativo, caso tenha mais de um jogo cadastrado no sistema.
+    if (gameData.isActive) {
+      const q = query(collection(db, "games"), where("isActive", "==", true));
+      const snap = await getDocs(q);
+      const batchPromises = snap.docs.map(docSnap => 
+        updateDoc(doc(db, "games", docSnap.id), { isActive: false })
+      );
+      await Promise.all(batchPromises);
+    }
+
     const docRef = doc(collection(db, path));
     const newGame: Game = {
       ...gameData,
@@ -214,6 +227,18 @@ export async function addGame(gameData: Omit<Game, "id" | "createdAt">): Promise
 export async function updateGame(gameId: string, updates: Partial<Game>): Promise<void> {
   const path = `games/${gameId}`;
   try {
+    // Somente um jogo pode estar ativo, caso tenha mais de um jogo cadastrado no sistema.
+    if (updates.isActive === true) {
+      const q = query(collection(db, "games"), where("isActive", "==", true));
+      const snap = await getDocs(q);
+      const batchPromises = snap.docs
+        .filter(docSnap => docSnap.id !== gameId)
+        .map(docSnap => 
+          updateDoc(doc(db, "games", docSnap.id), { isActive: false })
+        );
+      await Promise.all(batchPromises);
+    }
+
     const gameRef = doc(db, "games", gameId);
     await updateDoc(gameRef, updates);
   } catch (error) {
@@ -376,14 +401,19 @@ export async function resetGameAndPoints(gameId: string): Promise<void> {
 
 // Calcular Ranking (Scoreboard) dos Participantes
 export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]> {
+  if (!bets || !Array.isArray(bets)) return [];
+
   // Apenas apostas confirmadas somam pontos
-  const confirmedBets = bets.filter((b) => b.status === "confirmed" && b.calculatedPoints !== null);
+  const confirmedBets = bets.filter((b) => b && b.status === "confirmed" && b.calculatedPoints !== null && b.calculatedPoints !== undefined);
 
   const scoresMap = new Map<string, { userName: string; totalPoints: number; exactScoresCount: number; confirmedCount: number }>();
 
   confirmedBets.forEach((bet) => {
+    const rawPhone = bet.userPhone || "";
+    const rawName = bet.userName || "Anônimo";
+    
     // Agrupar por telefone + nome para evitar colisão caso pessoas tenham nomes iguais
-    const key = `${bet.userPhone.trim()}_${bet.userName.trim().toLowerCase()}`;
+    const key = `${rawPhone.trim()}_${rawName.trim().toLowerCase()}`;
     const points = bet.calculatedPoints || 0;
     const isExact = points >= 10; // Placar exato dá pelo menos 10 pontos (sem bônus do primeiro gol é 10, com é 13)
 
@@ -396,7 +426,7 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
       }
     } else {
       scoresMap.set(key, {
-        userName: bet.userName,
+        userName: rawName,
         totalPoints: points,
         exactScoresCount: isExact ? 1 : 0,
         confirmedCount: 1,
@@ -407,7 +437,7 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
   const participants: ParticipantScore[] = Array.from(scoresMap.entries()).map(([key, data]) => {
     // Extrai o telefone da chave
     const parts = key.split("_");
-    const phone = parts[0];
+    const phone = parts[0] || "";
     return {
       userName: data.userName,
       userPhone: phone,
@@ -432,7 +462,7 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
     if (b.confirmedBetsCount !== a.confirmedBetsCount) {
       return b.confirmedBetsCount - a.confirmedBetsCount;
     }
-    return a.userName.localeCompare(b.userName);
+    return (a.userName || "").localeCompare(b.userName || "");
   });
 }
 
@@ -447,18 +477,18 @@ export async function checkBetCompliance(
   try {
     const cleanPhone = userPhone.replace(/\D/g, "");
 
-    // 1. Checar se o usuário já possui um palpite cadastrado (confirmado ou aguardando) para esse jogo
+    // 1. Checar se o usuário já possui até 2 palpites cadastrados (confirmados ou aguardando) para esse jogo
     const qPhone = query(
       collection(db, "bets"),
       where("userPhone", "==", cleanPhone),
       where("gameId", "==", gameId)
     );
     const snapPhone = await getDocs(qPhone);
-    const hasAlreadyConfirmedForThisGame = snapPhone.docs.some(d => d.id !== currentBetId);
-    if (hasAlreadyConfirmedForThisGame) {
+    const existingCountForThisGame = snapPhone.docs.filter(d => d.id !== currentBetId).length;
+    if (existingCountForThisGame >= 2) {
       return {
         compliant: false,
-        reason: "Você já possui um palpite cadastrado para esta partida (com pagamento confirmado ou aguardando validação do PIX). Cada participante só pode registrar um único palpite por jogo."
+        reason: "Você já possui 2 palpites cadastrados para esta partida (com pagamento confirmado ou aguardando validação do PIX). Cada participante só pode registrar até 2 palpites por jogo."
       };
     }
 

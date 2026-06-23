@@ -18,15 +18,30 @@ import { getTeamFlag } from "../lib/flags";
 interface BetsOverviewProps {
   bets: Bet[];
   games: Game[];
+  entryFee?: number;
 }
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "game";
 type StatusFilter = "all" | "confirmed" | "pending";
 
-export default function BetsOverview({ bets, games }: BetsOverviewProps) {
+export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  
+  // Encontrar o jogo ativo para definir o padrão inicial
+  const activeGame = useMemo(() => (games || []).find((g) => g && g.isActive), [games]);
   const [selectedGameId, setSelectedGameId] = useState<string>("all");
+
+  React.useEffect(() => {
+    if (games && games.length > 0) {
+      if (activeGame) {
+        setSelectedGameId(activeGame.id);
+      } else {
+        setSelectedGameId("all");
+      }
+    }
+  }, [games, activeGame]);
+
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Helper to map Game info quickly
@@ -36,15 +51,21 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
     return map;
   }, [games]);
 
-  // Stats calculations for public dashboard (transparency)
+  // Stats calculations for public dashboard (transparency) - now managed/filtered by game!
   const stats = useMemo(() => {
-    const totalBets = bets.length;
-    const confirmedBets = bets.filter((b) => b.status === "confirmed");
-    const pendingBets = bets.filter((b) => b.status === "pending");
-    const cashCollected = confirmedBets.length * 10;
-    const uniquePhones = new Set(bets.map((b) => b.userPhone)).size;
-    const avgBetsPerGame = games.length > 0 ? (totalBets / games.length).toFixed(1) : "0";
-    const pendingAmount = pendingBets.length * 10;
+    const gameBets = selectedGameId === "all" ? bets : bets.filter((b) => b.gameId === selectedGameId);
+    const totalBets = gameBets.length;
+    const confirmedBets = gameBets.filter((b) => b.status === "confirmed");
+    const pendingBets = gameBets.filter((b) => b.status === "pending");
+    const mult = entryFee !== undefined ? entryFee : 10;
+    const cashCollected = confirmedBets.length * mult;
+    const uniquePhones = new Set(gameBets.map((b) => b.userPhone)).size;
+    
+    // For average bets per game, if showing a single game, it's just the total bets of that game.
+    const avgBetsPerGame = selectedGameId !== "all" 
+      ? totalBets.toFixed(0) 
+      : (games.length > 0 ? (totalBets / games.length).toFixed(1) : "0");
+    const pendingAmount = pendingBets.length * mult;
     
     return {
       totalBets,
@@ -55,10 +76,11 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
       avgBetsPerGame,
       pendingAmount
     };
-  }, [bets, games]);
+  }, [bets, games, selectedGameId, entryFee]);
 
   // Mask user phone for privacy while keeping useful identifying digits
   const formatPhone = (phone: string) => {
+    if (!phone) return "";
     const cleaned = phone.replace(/\D/g, "");
     if (cleaned.length >= 10) {
       const ddd = cleaned.slice(-11, -9);
@@ -73,16 +95,21 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
   const filteredAndSortedBets = useMemo(() => {
     return bets
       .filter((bet) => {
+        if (!bet) return false;
         const game = gamesMap.get(bet.gameId);
         
+        const rawName = bet.userName || "";
+        const rawPhone = bet.userPhone || "";
+        const rawFirstGoal = bet.firstGoalPrediction || "";
+
         // Match Search Term (Name, Game names, or first scorer prediction)
         const matchSearch =
-          bet.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bet.userPhone.includes(searchTerm) ||
+          rawName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rawPhone.includes(searchTerm) ||
           (game &&
-            (game.homeTeam.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              game.awayTeam.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-          bet.firstGoalPrediction.toLowerCase().includes(searchTerm.toLowerCase());
+            ((game.homeTeam || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (game.awayTeam || "").toLowerCase().includes(searchTerm.toLowerCase()))) ||
+          rawFirstGoal.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Match Status Filter
         const matchStatus =
@@ -96,20 +123,21 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
         return matchSearch && matchStatus && matchGame;
       })
       .sort((a, b) => {
+        if (!a || !b) return 0;
         switch (sortBy) {
           case "newest":
-            return b.createdAt - a.createdAt;
+            return (b.createdAt || 0) - (a.createdAt || 0);
           case "oldest":
-            return a.createdAt - b.createdAt;
+            return (a.createdAt || 0) - (b.createdAt || 0);
           case "name-asc":
-            return a.userName.localeCompare(b.userName);
+            return (a.userName || "").localeCompare(b.userName || "");
           case "name-desc":
-            return b.userName.localeCompare(a.userName);
+            return (b.userName || "").localeCompare(a.userName || "");
           case "game": {
             const gameA = gamesMap.get(a.gameId);
             const gameB = gamesMap.get(b.gameId);
-            const nameA = gameA ? `${gameA.homeTeam} x ${gameA.awayTeam}` : "";
-            const nameB = gameB ? `${gameB.homeTeam} x ${gameB.awayTeam}` : "";
+            const nameA = gameA ? `${gameA.homeTeam || ""} x ${gameA.awayTeam || ""}` : "";
+            const nameB = gameB ? `${gameB.homeTeam || ""} x ${gameB.awayTeam || ""}` : "";
             return nameA.localeCompare(nameB);
           }
           default:
@@ -140,9 +168,17 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
 
       {/* Transparency Dashboard Widget Grid */}
       <div className="space-y-3">
-        <p className="text-[9px] font-black tracking-widest text-[#a1a1aa] uppercase flex items-center gap-1.5 leading-none">
+        <p className="text-[9px] font-black tracking-widest text-[#a1a1aa] uppercase flex flex-wrap items-center gap-1.5 leading-none">
           <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shrink-0"></span>
-          Painel de Transparência WL
+          <span>Painel de Transparência WL</span>
+          {selectedGameId !== "all" && gamesMap.has(selectedGameId) && (
+            <span className="text-blue-400 font-extrabold normal-case bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[8px] animate-fade-in inline-flex items-center gap-1">
+              Partida: {gamesMap.get(selectedGameId)?.homeTeam} x {gamesMap.get(selectedGameId)?.awayTeam}
+              {gamesMap.get(selectedGameId)?.isActive && (
+                <span className="text-yellow-400 font-bold font-mono">⭐ Ativo</span>
+              )}
+            </span>
+          )}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Cash Collected Card */}
@@ -237,7 +273,7 @@ export default function BetsOverview({ bets, games }: BetsOverviewProps) {
             <option value="all">Todas as Partidas</option>
             {games.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.homeTeam} x {g.awayTeam}
+                {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""}
               </option>
             ))}
           </select>

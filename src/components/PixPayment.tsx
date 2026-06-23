@@ -22,6 +22,9 @@ interface PixPaymentProps {
   pixKey: string;
   pixReceiver: string;
   adminPhone: string;
+  entryFee?: number;
+  pixCopiaCola?: string;
+  qrCodeUrl?: string;
   onReset: () => void;
 }
 
@@ -36,13 +39,19 @@ export default function PixPayment({
   pixKey,
   pixReceiver,
   adminPhone,
+  entryFee,
+  pixCopiaCola,
+  qrCodeUrl,
   onReset,
 }: PixPaymentProps) {
   const [copiaColaCopied, setCopiaColaCopied] = useState(false);
   const [copiedTicket, setCopiedTicket] = useState(false);
-  const betValue = "R$ 10,00";
 
-  const pixPayload = generatePixPayload(pixKey, pixReceiver, "10.00");
+  const finalEntryFee = entryFee !== undefined ? entryFee : 10;
+  const betValue = "R$ " + finalEntryFee.toFixed(2).replace(".", ",");
+
+  const defaultPixPayload = generatePixPayload(pixKey, pixReceiver, finalEntryFee.toFixed(2));
+  const pixPayload = pixCopiaCola && pixCopiaCola.trim() !== "" ? pixCopiaCola.trim() : defaultPixPayload;
 
   const handleCopyCopiaCola = () => {
     navigator.clipboard.writeText(pixPayload);
@@ -50,9 +59,9 @@ export default function PixPayment({
     setTimeout(() => setCopiaColaCopied(false), 2000);
   };
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=000000&bgcolor=ffffff&data=${encodeURIComponent(
-    pixPayload
-  )}`;
+  const finalQrCodeSrc = qrCodeUrl && qrCodeUrl.trim() !== ""
+    ? qrCodeUrl.trim()
+    : `https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=000000&bgcolor=ffffff&data=${encodeURIComponent(pixPayload)}`;
 
   const groupLink = "https://chat.whatsapp.com/DGLt6l0RCRJ1ZeH2TVafvu";
   
@@ -96,7 +105,7 @@ export default function PixPayment({
           Seu palpite foi gravado em nossa base de dados. Para concluir e ativar o seu bilhete, siga os dois passos abaixo:
         </p>
         <div className="text-[11px] font-semibold text-zinc-400 space-y-2 pt-1 border-t border-white/5">
-          <p><span className="text-yellow-400 font-extrabold">Passo 1.</span> Faça o PIX de <span className="text-white font-bold">R$ 10,00</span> usando o QR Code ou copiando a chave.</p>
+          <p><span className="text-yellow-400 font-extrabold">Passo 1.</span> Faça o PIX de <span className="text-white font-bold">{betValue}</span> usando o QR Code ou copiando a chave.</p>
           <p><span className="text-yellow-400 font-extrabold">Passo 2.</span> Clique no botão verde abaixo para enviar seu bilhete e o comprovante do PIX diretamente para o administrador.</p>
         </div>
       </div>
@@ -149,16 +158,16 @@ export default function PixPayment({
           <p className="text-xs font-black text-white/95 uppercase tracking-wider flex items-center justify-center gap-1.5 leading-none">
             <span>💸</span> Pagamento via PIX Copiar e Colar
           </p>
-          <p className="text-lg font-black text-yellow-500 tracking-tight leading-none mt-1">
-            R$ 10,00
+          <p className="text-lg font-black text-yellow-500 tracking-tight leading-none mt-1 font-mono font-medium">
+            {betValue}
           </p>
         </div>
 
         <div className="bg-white p-2.5 rounded-2xl shadow-xl shadow-black/40 border border-white/10 relative group">
           <img
-            src={qrCodeUrl}
+            src={finalQrCodeSrc}
             alt="QR Code Pix"
-            className="w-40 h-40 block rounded-lg select-none"
+            className="w-40 h-40 block rounded-lg select-none object-contain"
             referrerPolicy="no-referrer"
           />
         </div>
