@@ -93,14 +93,17 @@ export default function AdminPanel({
   const [betSearch, setBetSearch] = useState("");
   const [betStatusFilter, setBetStatusFilter] = useState<"all" | "pending" | "confirmed">("all");
   const [betGameFilter, setBetGameFilter] = useState<string>("all");
+  const [dashGameFilter, setDashGameFilter] = useState<string>("all");
 
   const activeGame = (games || []).find((g) => g && g.isActive);
   useEffect(() => {
     if (games && games.length > 0) {
       if (activeGame) {
         setBetGameFilter(activeGame.id);
+        setDashGameFilter(activeGame.id);
       } else {
         setBetGameFilter("all");
+        setDashGameFilter("all");
       }
     }
   }, [games, activeGame]);
@@ -382,13 +385,19 @@ export default function AdminPanel({
     setTimeout(() => setSettingsSuccess(""), 4000);
   };
 
-  // Estatísticas Rápidas do Painel
-  const totalBetsCount = (bets || []).length;
-  const confirmedBets = (bets || []).filter((b) => b && b.status === "confirmed");
-  const pendingBets = (bets || []).filter((b) => b && b.status === "pending");
+  // Estatísticas Rápidas do Painel - filtradas por partida no Dashboard
+  const dashBets = React.useMemo(() => {
+    const allBets = bets || [];
+    if (dashGameFilter === "all") return allBets;
+    return allBets.filter((b) => b && b.gameId === dashGameFilter);
+  }, [bets, dashGameFilter]);
+
+  const totalBetsCount = dashBets.length;
+  const confirmedBets = dashBets.filter((b) => b && b.status === "confirmed");
+  const pendingBets = dashBets.filter((b) => b && b.status === "pending");
   const feeMult = currentPixSetting.entryFee !== undefined ? currentPixSetting.entryFee : 10;
   const totalCashCollected = confirmedBets.length * feeMult;
-  const uniqueParticipants = new Set((bets || []).map((b) => b?.userPhone || "N/A")).size;
+  const uniqueParticipants = new Set(dashBets.map((b) => b?.userPhone || "N/A")).size;
 
   // Filtrar Palpites cadastrados na listagem
   const filteredBets = (bets || []).filter((b) => {
@@ -510,6 +519,28 @@ export default function AdminPanel({
       {/********* TAB: DASHBOARD *********/}
       {activeTab === "dashboard" && (
         <div className="space-y-4 animate-fade-in">
+          {/* Dashboard Game Selector */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#050505] border border-white/10 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shrink-0"></span>
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-zinc-300">Filtro do Painel:</span>
+            </div>
+            <div className="w-full sm:w-72">
+              <select
+                value={dashGameFilter}
+                onChange={(e) => setDashGameFilter(e.target.value)}
+                className="w-full bg-[#000] border border-white/10 text-xs text-white rounded-xl p-3 outline-none font-bold focus:border-blue-500 cursor-pointer uppercase tracking-wider text-[10px]"
+              >
+                <option value="all">Todas as Partidas (Geral)</option>
+                {games.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Bento-grid Analytics cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-[#050505] border border-white/10 rounded-2xl p-4 shadow-md flex flex-col justify-between">
@@ -533,16 +564,28 @@ export default function AdminPanel({
           </div>
 
           <div className="bg-[#050505] border border-white/10 rounded-2xl p-4 space-y-2">
-            <h4 className="text-xs font-bold text-white/80 uppercase tracking-wider">Resumo da Competição</h4>
+            <h4 className="text-xs font-bold text-white/80 uppercase tracking-wider">
+              {dashGameFilter === "all" ? "Resumo da Competição" : "Resumo da Partida Selecionada"}
+            </h4>
             <div className="grid grid-cols-2 gap-4 text-xs text-white/55">
               <div>
                 <p>Torcedores Participando: <span className="text-white font-bold font-mono">{uniqueParticipants}</span></p>
-                <p className="mt-1">Partidas Configuradas: <span className="text-white font-bold font-mono">{games.length}</span></p>
+                <p className="mt-1">
+                  {dashGameFilter === "all" ? "Partidas Configuradas: " : "Partida Selecionada: "}
+                  <span className="text-white font-bold font-mono">
+                    {dashGameFilter === "all" ? games.length : "1"}
+                  </span>
+                </p>
               </div>
               <div>
-                <p>Média de palpites por jogo: <span className="text-white font-bold font-mono">
-                  {games.length > 0 ? (totalBetsCount / games.length).toFixed(1) : 0}
-                </span></p>
+                <p>
+                  {dashGameFilter === "all" ? "Média de palpites por jogo: " : "Total de palpites da partida: "}
+                  <span className="text-white font-bold font-mono">
+                    {dashGameFilter === "all"
+                      ? (games.length > 0 ? (totalBetsCount / games.length).toFixed(1) : 0)
+                      : totalBetsCount}
+                  </span>
+                </p>
                 <p className="mt-1">Inscrições pendentes: <span className="text-white font-bold font-mono">{pendingBets.length} (R$ {(pendingBets.length * feeMult).toFixed(2).replace(".", ",")})</span></p>
               </div>
             </div>
