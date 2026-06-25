@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Trophy, Search, Hash, Medal, Star, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Trophy, Search, Hash, Medal, Star, Calendar, ChevronDown, ChevronUp, Award } from "lucide-react";
 import { Game, Bet, ParticipantScore } from "../types";
 import { calculateRanking } from "../lib/dbHelper";
 
@@ -201,6 +201,55 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
         </span>
       </div>
 
+      {/* Sistema de Pontuação Aplicado */}
+      <div className="bg-gradient-to-r from-blue-950/20 to-indigo-950/15 border border-white/10 rounded-2xl p-4.5 space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Award className="w-4.5 h-4.5 text-yellow-400" />
+            <span className="text-xs font-black text-white uppercase tracking-wider">Sistema de Pontuação Aplicado</span>
+          </div>
+          <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded-md">Regras Oficiais</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-[#050505]/80 border border-white/5 rounded-xl p-3 flex items-start gap-3">
+            <span className="w-7 h-7 shrink-0 bg-blue-600 text-white rounded-lg font-black flex items-center justify-center text-xs font-mono">10</span>
+            <div className="space-y-0.5">
+              <p className="text-xs font-black text-white">Placar Exato (PE)</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Acertou o placar exato da partida (Exemplo: palpite 2x1, resultado 2x1).
+              </p>
+            </div>
+          </div>
+          <div className="bg-[#050505]/80 border border-white/5 rounded-xl p-3 flex items-start gap-3">
+            <span className="w-7 h-7 shrink-0 bg-yellow-500 text-slate-950 rounded-lg font-black flex items-center justify-center text-xs font-mono">07</span>
+            <div className="space-y-0.5">
+              <p className="text-xs font-black text-white">Vencedor + Saldo de Gols</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Acertou o vencedor e o saldo de gols (Exemplo: palpite 2x0, resultado 3x1).
+              </p>
+            </div>
+          </div>
+          <div className="bg-[#050505]/80 border border-white/5 rounded-xl p-3 flex items-start gap-3">
+            <span className="w-7 h-7 shrink-0 bg-amber-600 text-white rounded-lg font-black flex items-center justify-center text-xs font-mono">05</span>
+            <div className="space-y-0.5">
+              <p className="text-xs font-black text-white">Vencedor / Empate Simples</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Acertou apenas o time vencedor ou empate simples (Exemplo: palpite 1x0, resultado 3x0).
+              </p>
+            </div>
+          </div>
+          <div className="bg-[#050505]/80 border border-white/5 rounded-xl p-3 flex items-start gap-3">
+            <span className="w-7 h-7 shrink-0 bg-indigo-500 text-white rounded-lg font-black flex items-center justify-center text-xs font-mono">+3</span>
+            <div className="space-y-0.5">
+              <p className="text-xs font-black text-indigo-300">Bônus: Autor do 1º Gol</p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Acertou a Seleção/Time que inaugurou o placar (Soma adicional aos pontos do placar).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Seletor de Confronto */}
       {games && games.length > 1 && (
         <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -274,7 +323,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
               return (
                 <div
                   key={`${p.userPhone}_${index}`}
-                  className={`flex flex-col transition duration-200 border-b border-white/5 last:border-0 ${rowBg}`}
+                  className={`flex flex-col transition duration-200 border-b border-white/5 last:border-0 group ${rowBg}`}
                 >
                   <div
                     onClick={() => setExpandedUserId(isExpanded ? null : userId)}
@@ -306,6 +355,10 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
                         </p>
                         <p className="text-[10px] text-white/40 font-bold font-mono mt-0.5">
                           {formatPrivatePhone(p.userPhone)}
+                        </p>
+                        <p className="text-[9px] text-blue-500/80 font-bold font-mono mt-1 flex items-center gap-1 transition-colors duration-200 group-hover:text-blue-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500/70 group-hover:bg-blue-400 animate-pulse" />
+                          {isExpanded ? "Clique para fechar auditoria" : "Clique para auditar detalhamento"}
                         </p>
                       </div>
                     </div>
