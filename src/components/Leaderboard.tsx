@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Trophy, Search, Hash, Medal, Star, Calendar, ChevronDown, ChevronUp, Award } from "lucide-react";
 import { Game, Bet, ParticipantScore } from "../types";
 import { calculateRanking } from "../lib/dbHelper";
@@ -124,39 +124,27 @@ function getBetPointsDetails(bet: Bet, game: Game | undefined) {
 export default function Leaderboard({ bets, games }: LeaderboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  
-  // Encontrar o jogo ativo para definir o padrão inicial
-  const activeGame = (games || []).find((g) => g && g.isActive);
-  const [selectedGameId, setSelectedGameId] = useState<string>("");
 
-  // Sempre que a lista de jogos carregar ou mudar, definir a seleção inicial para o jogo ativo ou primeiro jogo
-  useEffect(() => {
-    if (games && games.length > 0) {
-      if (activeGame) {
-        setSelectedGameId(activeGame.id);
-      } else {
-        const firstGame = games[0];
-        if (firstGame) setSelectedGameId(firstGame.id);
-      }
-    }
-  }, [games, activeGame]);
+  // Encontrar os jogos com rateio pendente (rateioRealizado !== true)
+  const openGames = useMemo(() => {
+    return (games || []).filter((g) => g && g.rateioRealizado !== true);
+  }, [games]);
+
+  const openGameIds = useMemo(() => {
+    return new Set(openGames.map((g) => g.id));
+  }, [openGames]);
 
   const [participants, setParticipants] = useState<ParticipantScore[]>([]);
 
-  // Recalcular o ranking por partida selecionada de forma reativa e assíncrona
+  // Recalcular o ranking de todos os jogos com rateio aberto de forma reativa e assíncrona
   useEffect(() => {
     async function updateRanking() {
-      // Filtrar palpites deste jogo específico
-      const filteredBets = (bets || []).filter((b) => b && b.gameId === selectedGameId);
+      const filteredBets = (bets || []).filter((b) => b && openGameIds.has(b.gameId));
       const items = await calculateRanking(filteredBets);
       setParticipants(items);
     }
-    if (selectedGameId) {
-      updateRanking();
-    } else {
-      setParticipants([]);
-    }
-  }, [bets, selectedGameId]);
+    updateRanking();
+  }, [bets, openGameIds]);
 
   // Filtrar participantes por nome ou telefone
   const filteredParticipants = (participants || []).filter(
@@ -197,7 +185,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
           </div>
         </div>
         <span className="text-[9px] text-white/40 uppercase tracking-widest font-bold">
-          Ranking por Jogo
+          Jogos em Aberto (Geral)
         </span>
       </div>
 
@@ -250,59 +238,29 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
         </div>
       </div>
 
-      {/* Seletor de Confronto */}
-      {games && games.length > 1 && (
-        <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
-            <span className="text-xs font-bold text-zinc-300">Selecione o Confronto:</span>
+      {/* Resumo de Confrontos em Aberto */}
+      {openGames && openGames.length > 0 ? (
+        <div className="bg-amber-950/10 border border-amber-500/20 text-amber-400 rounded-2xl p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Partidas Aguardando Rateio ({openGames.length})</p>
+            </div>
+            <span className="text-[9px] text-amber-500 font-bold uppercase tracking-wider bg-amber-500/10 px-2 py-0.5 rounded-md">Ativas</span>
           </div>
-          <select
-            value={selectedGameId}
-            onChange={(e) => setSelectedGameId(e.target.value)}
-            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer max-w-full sm:max-w-xs truncate"
-          >
-            {games.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.homeTeam} x {g.awayTeam} {g.isActive ? "⭐ (Ativo)" : ""} — {g.rateioRealizado ? "Rateio Realizado ✅" : "Aguardando Rateio ⏳"}
-              </option>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {openGames.map((g) => (
+              <span key={g.id} className="text-[10px] font-extrabold bg-[#050505] border border-white/5 text-zinc-200 px-2.5 py-1 rounded-xl shadow-sm">
+                ⚽ {g.homeTeam} x {g.awayTeam} {g.isActive ? "⭐" : ""}
+              </span>
             ))}
-          </select>
-        </div>
-      )}
-
-      {/* Se houver apenas 1 jogo, mostramos fixo discretamente */}
-      {games && games.length === 1 && games[0] && (
-        <div className="bg-blue-950/20 border border-blue-500/10 rounded-xl p-3 text-[11px] font-semibold text-blue-400 flex items-center gap-2">
-          <Calendar className="w-4 h-4 shrink-0" />
-          Visualizando ranking do confronto: <span className="text-white font-extrabold">{games[0].homeTeam} x {games[0].awayTeam}</span>
-        </div>
-      )}
-
-      {/* Status Financeiro da Partida Selecionada */}
-      {(() => {
-        const selGame = games.find((g) => g.id === selectedGameId) || (games && games[0]);
-        if (!selGame) return null;
-        const isRateio = selGame.rateioRealizado === true;
-        return (
-          <div className={`border rounded-2xl p-4 flex items-center justify-between gap-3 ${
-            isRateio
-              ? "bg-emerald-950/10 border-emerald-500/20 text-emerald-400"
-              : "bg-amber-950/10 border-amber-500/20 text-amber-400"
-          }`}>
-            <div className="space-y-0.5">
-              <p className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Status Financeiro do Jogo:</p>
-              <p className="text-xs font-bold text-white">
-                {selGame.homeTeam} x {selGame.awayTeam}
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/5 font-black uppercase tracking-wider text-[9px] bg-[#050505]">
-              <span className={`w-2 h-2 rounded-full ${isRateio ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
-              <span>{isRateio ? "Rateio Realizado" : "Aguardando Rateio"}</span>
-            </div>
           </div>
-        );
-      })()}
+        </div>
+      ) : (
+        <div className="bg-emerald-950/10 border border-emerald-500/20 text-emerald-400 rounded-2xl p-4 text-center text-xs font-semibold uppercase tracking-wider">
+          🎉 Todos os rateios foram concluídos!
+        </div>
+      )}
 
       {/* Busca */}
       <div className="relative">
@@ -341,9 +299,8 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
               const userId = `${p.userPhone}_${p.userName}`;
               const isExpanded = expandedUserId === userId;
               const userBets = (bets || []).filter(
-                (b) => b && b.gameId === selectedGameId && b.userPhone === p.userPhone && b.status === "confirmed"
+                (b) => b && openGameIds.has(b.gameId) && b.userPhone === p.userPhone && b.status === "confirmed"
               );
-              const currentGame = (games || []).find((g) => g && g.id === selectedGameId);
 
               return (
                 <div
@@ -435,6 +392,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
                           </p>
                         ) : (
                           userBets.map((bet, bIndex) => {
+                            const currentGame = (games || []).find((g) => g && g.id === bet.gameId);
                             const details = getBetPointsDetails(bet, currentGame);
                             return (
                               <div
@@ -445,7 +403,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
                                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                                   <div className="flex items-center gap-2">
                                     <span className="text-[9px] bg-blue-500/10 text-blue-400 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                      Palpite {userBets.length > 1 ? `#${bIndex + 1}` : "Único"}
+                                      {currentGame ? `${currentGame.homeTeam} x ${currentGame.awayTeam}` : `Palpite #${bIndex + 1}`}
                                     </span>
                                     <span className="text-xs font-black font-mono text-zinc-200">
                                       Placar: {bet.homePrediction} x {bet.awayPrediction}
