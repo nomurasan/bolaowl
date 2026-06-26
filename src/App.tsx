@@ -42,6 +42,10 @@ export default function App() {
     pixKey: "61986267773",
     pixReceiver: "Glaucia Leles - Banco Itaú",
     adminPhone: "556186267773",
+    logoUrl: "",
+    headerColor: "#F4F4F4",
+    headerTextColor: "#1e293b",
+    backgroundColor: "#4E94D8",
   });
   const [ranking, setRanking] = useState<ParticipantScore[]>([]);
 
@@ -265,39 +269,96 @@ export default function App() {
     return games.find((g) => g.id === selectedGameId);
   };
 
+  const isCssColor = (val?: string) => {
+    if (!val) return false;
+    const clean = val.trim();
+    return clean.startsWith("#") || clean.startsWith("rgb") || clean.startsWith("hsl") || clean.startsWith("linear-gradient") || clean.startsWith("gradient");
+  };
+
+  const bgStyle = isCssColor(pixSetting.backgroundColor) ? { backgroundColor: pixSetting.backgroundColor } : undefined;
+  const bgClass = isCssColor(pixSetting.backgroundColor) ? "" : (pixSetting.backgroundColor || "bg-[#4E94D8]");
+
+  const headerStyle = isCssColor(pixSetting.headerColor) ? { backgroundColor: pixSetting.headerColor } : undefined;
+  const headerClass = isCssColor(pixSetting.headerColor) ? "" : (pixSetting.headerColor || "bg-[#F4F4F4]/95");
+
+  const headerTextStyle = isCssColor(pixSetting.headerTextColor) ? { color: pixSetting.headerTextColor } : undefined;
+  const headerTextClass = isCssColor(pixSetting.headerTextColor) ? "" : (pixSetting.headerTextColor || "text-slate-800");
+
+  const headerSubtextStyle = isCssColor(pixSetting.headerTextColor) ? { color: pixSetting.headerTextColor, opacity: 0.75 } : undefined;
+  const headerSubtextClass = isCssColor(pixSetting.headerTextColor) ? "" : "text-zinc-600";
+
+  const renderLogo = () => {
+    if (!pixSetting.logoUrl) {
+      return (
+        <svg viewBox="0 0 120 80" className="w-12 h-8 filter drop-shadow-[0_2px_8px_rgba(78,148,216,0.3)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill={isCssColor(pixSetting.backgroundColor) ? pixSetting.backgroundColor : "#4E94D8"} />
+          <text
+            x="58"
+            y="50"
+            fill="white"
+            fontSize="34"
+            fontWeight="900"
+            fontStyle="italic"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            textAnchor="middle"
+            style={{ letterSpacing: "-1.5px" }}
+          >
+            WL
+          </text>
+        </svg>
+      );
+    }
+
+    const trimmed = pixSetting.logoUrl.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/") || trimmed.startsWith("data:image")) {
+      return (
+        <img
+          src={trimmed}
+          alt="Logo do Bolão"
+          className="w-10 h-10 object-contain rounded-xl shadow-md border border-white/10"
+          referrerPolicy="no-referrer"
+        />
+      );
+    }
+
+    // Caso seja um emoji ou texto curto
+    return (
+      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-extrabold shadow-sm border border-white/5">
+        {trimmed}
+      </div>
+    );
+  };
+
   const selectedGameObj = getSelectedGameObj();
 
   return (
-    <div className="min-h-screen bg-[#4E94D8] text-gray-100 flex flex-col justify-between selection:bg-blue-500 selection:text-slate-950 font-sans leading-relaxed">
+    <div
+      className={`min-h-screen text-gray-100 flex flex-col justify-between selection:bg-blue-500 selection:text-slate-950 font-sans leading-relaxed transition-colors duration-300 ${bgClass}`}
+      style={bgStyle}
+    >
       {/* Visual background glow decoratives */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 pointer-events-none overflow-hidden -z-10 bg-radial from-blue-500/10 via-blue-800/2 to-transparent" />
 
       {/* Main Container Header */}
-      <header className="border-b border-zinc-200 bg-[#F4F4F4]/95 backdrop-blur-md sticky top-0 z-30 shadow-sm">
+      <header
+        className={`border-b border-zinc-200/20 backdrop-blur-md sticky top-0 z-30 shadow-sm transition-colors duration-300 ${headerClass}`}
+        style={headerStyle}
+      >
         <div className="w-full max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <svg viewBox="0 0 120 80" className="w-12 h-8 filter drop-shadow-[0_2px_8px_rgba(78,148,216,0.3)]" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="5,15 60,3 115,15 115,65 60,77 5,65" fill="#4E94D8" />
-              <text
-                x="58"
-                y="50"
-                fill="white"
-                fontSize="34"
-                fontWeight="900"
-                fontStyle="italic"
-                fontFamily="system-ui, -apple-system, sans-serif"
-                textAnchor="middle"
-                style={{ letterSpacing: "-1.5px" }}
-              >
-                WL
-              </text>
-            </svg>
+            {renderLogo()}
             <div>
-              <h1 className="text-base font-black text-slate-800 tracking-wider uppercase leading-none">
+              <h1
+                className={`text-base font-black tracking-wider uppercase leading-none ${headerTextClass}`}
+                style={headerTextStyle}
+              >
                 BOLÃO WL
               </h1>
-              <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mt-0.5">
+              <p
+                className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${headerSubtextClass}`}
+                style={headerSubtextStyle}
+              >
                 Bolão Esportivo Copa 2026
               </p>
             </div>

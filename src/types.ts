@@ -40,6 +40,10 @@ export interface Setting {
   entryFee?: number;
   pixCopiaCola?: string;
   qrCodeUrl?: string;
+  logoUrl?: string;
+  headerColor?: string;
+  headerTextColor?: string;
+  backgroundColor?: string;
 }
 
 export interface ParticipantScore {

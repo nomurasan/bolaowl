@@ -57,6 +57,10 @@ export default function AdminPanel({
   const [entryFee, setEntryFee] = useState<number>(currentPixSetting.entryFee ?? 10);
   const [pixCopiaCola, setPixCopiaCola] = useState(currentPixSetting.pixCopiaCola || "");
   const [qrCodeUrl, setQrCodeUrl] = useState(currentPixSetting.qrCodeUrl || "");
+  const [logoUrl, setLogoUrl] = useState(currentPixSetting.logoUrl || "");
+  const [headerColor, setHeaderColor] = useState(currentPixSetting.headerColor || "#F4F4F4");
+  const [headerTextColor, setHeaderTextColor] = useState(currentPixSetting.headerTextColor || "#1e293b");
+  const [backgroundColor, setBackgroundColor] = useState(currentPixSetting.backgroundColor || "#4E94D8");
   const [settingsSuccess, setSettingsSuccess] = useState("");
 
   const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,6 +138,10 @@ export default function AdminPanel({
     setEntryFee(currentPixSetting.entryFee ?? 10);
     setPixCopiaCola(currentPixSetting.pixCopiaCola || "");
     setQrCodeUrl(currentPixSetting.qrCodeUrl || "");
+    setLogoUrl(currentPixSetting.logoUrl || "");
+    setHeaderColor(currentPixSetting.headerColor || "#F4F4F4");
+    setHeaderTextColor(currentPixSetting.headerTextColor || "#1e293b");
+    setBackgroundColor(currentPixSetting.backgroundColor || "#4E94D8");
   }, [currentPixSetting]);
 
   // Verificar autenticação via chamada de API segura no backend
@@ -234,7 +242,11 @@ export default function AdminPanel({
     setGTime(game.time);
     setGLocation(game.location);
     // Converter timestamp em formato de datetime-local aceitável no HTML input
-    const dateObj = new Date(game.gameTimestamp);
+    let ts = Number(game.gameTimestamp);
+    if (!ts || isNaN(ts)) {
+      ts = Date.now();
+    }
+    const dateObj = new Date(ts);
     // Formato yyyy-MM-ddThh:mm
     const pad = (n: number) => String(n).padStart(2, "0");
     const localStr = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(
@@ -243,6 +255,16 @@ export default function AdminPanel({
     setGTimestampStr(localStr);
     setGIsActive(game.isActive);
     setGameFormOpen(true);
+
+    // Rolar suavemente até o topo do formulário para que o usuário saiba que ele abriu
+    setTimeout(() => {
+      const formEl = document.getElementById("game-edit-form");
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 50);
   };
 
   const handleDeleteGame = (game: Game) => {
@@ -379,6 +401,10 @@ export default function AdminPanel({
       entryFee: Number(entryFee) || 10,
       pixCopiaCola,
       qrCodeUrl,
+      logoUrl,
+      headerColor,
+      headerTextColor,
+      backgroundColor,
     });
     onRefreshData();
     setSettingsSuccess("Configurações atualizadas com sucesso!");
@@ -648,7 +674,7 @@ export default function AdminPanel({
 
           {/* Form Create/Edit Game */}
           {gameFormOpen && (
-            <form onSubmit={handleGameSubmit} className="bg-[#050505] border border-white/10 rounded-2xl p-5 space-y-4 text-xs text-white/80">
+            <form id="game-edit-form" onSubmit={handleGameSubmit} className="bg-[#050505] border border-white/10 rounded-2xl p-5 space-y-4 text-xs text-white/80 scroll-mt-6">
               <h4 className="text-xs font-black text-blue-500 border-b border-white/10 pb-2 uppercase tracking-widest">
                 {editingGameId ? "EDITAR JOGO SELECIONADO" : "CADASTRAR NOVO JOGO"}
               </h4>
@@ -1297,6 +1323,145 @@ export default function AdminPanel({
                 <p className="text-[10px] text-zinc-500 mt-1 font-medium select-none">
                   Insira uma URL pública direta para o seu QR Code, ou faça o upload de um arquivo acima. Se ambos estiverem limpos, o QR Code será gerado dinamicamente com base no Pix Copia e Cola configurado.
                 </p>
+              </div>
+            </div>
+
+            {/* SEÇÃO: CUSTOMIZAÇÃO E IDENTIDADE VISUAL */}
+            <div className="space-y-4 border-t border-white/5 pt-5">
+              <h4 className="text-xs font-black text-blue-500 flex items-center gap-1.5 uppercase tracking-wider">
+                🎨 CUSTOMIZAÇÃO DO PROGRAMA & IDENTIDADE VISUAL
+              </h4>
+              <p className="text-[10px] text-zinc-400 font-medium select-none">
+                Personalize a aparência do Bolão em tempo real. Você pode indicar códigos de cores em formato hexadecimal (ex: <code className="text-blue-400">#4E94D8</code>), RGB, ou classes de utilitário do Tailwind CSS.
+              </p>
+
+              {/* Presets de cores */}
+              <div className="bg-[#050505] border border-white/10 rounded-2xl p-3.5 space-y-2.5">
+                <span className="block text-[8px] uppercase font-bold text-white/50 tracking-wider">Combinações Rápidas de Cores (Presets)</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderColor("#F4F4F4");
+                      setHeaderTextColor("#1e293b");
+                      setBackgroundColor("#4E94D8");
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] cursor-pointer transition-colors"
+                  >
+                    🔵 Padrão WL (Azul Copa)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderColor("#0c0c0e");
+                      setHeaderTextColor("#ffffff");
+                      setBackgroundColor("#050505");
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] cursor-pointer transition-colors"
+                  >
+                    ⚫ Brutalist Dark (Noturno)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderColor("#ffdf00");
+                      setHeaderTextColor("#002776");
+                      setBackgroundColor("#009739");
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] cursor-pointer transition-colors"
+                  >
+                    🇧🇷 Seleção Brasileira
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderColor("#ffffff");
+                      setHeaderTextColor("#8a1538");
+                      setBackgroundColor("#8a1538");
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] cursor-pointer transition-colors"
+                  >
+                    🇶🇦 Catar (Vinho/Branco)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderColor("#ffffff");
+                      setHeaderTextColor("#0f172a");
+                      setBackgroundColor("#f8fafc");
+                    }}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] cursor-pointer transition-colors"
+                  >
+                    ⚪ Classic Light (Visual Limpo)
+                  </button>
+                </div>
+              </div>
+
+              {/* Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                    Logo Personalizado (Emoji, Texto ou URL da Imagem)
+                  </label>
+                  <input
+                    type="text"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="Ex: ⚽, 🏆, ou URL https://site.com/logo.png"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 placeholder:text-zinc-600"
+                  />
+                  <p className="text-[9px] text-zinc-500 mt-1 select-none font-medium">
+                    Se em branco, mostra o escudo padrão com o texto "WL". Caso contrário, mostra o emoji/texto inserido ou a imagem da URL informada.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                    Código de Cor do Fundo Geral
+                  </label>
+                  <input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    placeholder="Ex: #4E94D8, bg-slate-900, ou linear-gradient(...)"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-blue-500"
+                  />
+                  <p className="text-[9px] text-zinc-500 mt-1 select-none font-medium">
+                    Muda a cor de fundo do site. Formatos aceitos: Hexadecimal, gradiente CSS ou classe do Tailwind CSS.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                    Código de Cor do Fundo do Cabeçalho
+                  </label>
+                  <input
+                    type="text"
+                    value={headerColor}
+                    onChange={(e) => setHeaderColor(e.target.value)}
+                    placeholder="Ex: #F4F4F4, #000000, ou bg-zinc-950"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-blue-500"
+                  />
+                  <p className="text-[9px] text-zinc-500 mt-1 select-none font-medium">
+                    Cor de fundo para a barra superior de navegação.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">
+                    Código de Cor do Texto do Cabeçalho
+                  </label>
+                  <input
+                    type="text"
+                    value={headerTextColor}
+                    onChange={(e) => setHeaderTextColor(e.target.value)}
+                    placeholder="Ex: #1e293b, #ffffff, ou text-zinc-100"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-blue-500"
+                  />
+                  <p className="text-[9px] text-zinc-500 mt-1 select-none font-medium">
+                    Cor para o título "BOLÃO WL" e subtexto no cabeçalho.
+                  </p>
+                </div>
               </div>
             </div>
 

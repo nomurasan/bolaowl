@@ -93,6 +93,10 @@ export const DEFAULT_SETTINGS: Setting = {
   entryFee: 10,
   pixCopiaCola: "",
   qrCodeUrl: "",
+  logoUrl: "",
+  headerColor: "#F4F4F4",
+  headerTextColor: "#1e293b",
+  backgroundColor: "#4E94D8",
 };
 
 // Seeding executado na inicialização

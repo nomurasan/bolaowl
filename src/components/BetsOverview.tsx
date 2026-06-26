@@ -27,21 +27,6 @@ type StatusFilter = "all" | "confirmed" | "pending";
 export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  
-  // Encontrar o jogo ativo para definir o padrão inicial
-  const activeGame = useMemo(() => (games || []).find((g) => g && g.isActive), [games]);
-  const [selectedGameId, setSelectedGameId] = useState<string>("all");
-
-  React.useEffect(() => {
-    if (games && games.length > 0) {
-      if (activeGame) {
-        setSelectedGameId(activeGame.id);
-      } else {
-        setSelectedGameId("all");
-      }
-    }
-  }, [games, activeGame]);
-
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Helper to map Game info quickly
@@ -51,40 +36,32 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
     return map;
   }, [games]);
 
-  // Stats calculations for public dashboard (transparency) - now managed/filtered by game!
+  // Only games that are pending rateio (rateioRealizado !== true)
+  const pendingGamesList = useMemo(() => {
+    return games.filter((g) => g && g.rateioRealizado !== true);
+  }, [games]);
+
+  const pendingGameIds = useMemo(() => {
+    return new Set(pendingGamesList.map((g) => g.id));
+  }, [pendingGamesList]);
+
+  // Stats calculations for public dashboard (transparency) - now showing all games pending rateio
   const stats = useMemo(() => {
-    const gameBets = selectedGameId === "all" ? bets : bets.filter((b) => b.gameId === selectedGameId);
+    // Only bets of pending games
+    const gameBets = bets.filter((b) => b && pendingGameIds.has(b.gameId));
     const totalBets = gameBets.length;
     const confirmedBets = gameBets.filter((b) => b.status === "confirmed");
     const pendingBets = gameBets.filter((b) => b.status === "pending");
     const mult = entryFee !== undefined ? entryFee : 10;
 
-    // Filter games that are pending rateio (rateioRealizado !== true)
-    const pendingGameIds = new Set(games.filter((g) => g && g.rateioRealizado !== true).map((g) => g.id));
-
     // Calculate cashCollected based on rateio rules
-    let cashCollected = 0;
-    if (selectedGameId === "all") {
-      // Sum all confirmed bets for games pending rateio
-      const eligibleBets = bets.filter((b) => b && b.status === "confirmed" && pendingGameIds.has(b.gameId));
-      cashCollected = eligibleBets.length * mult;
-    } else {
-      // For a specific game, only count its confirmed bets if it is pending rateio
-      const selectedGame = games.find((g) => g && g.id === selectedGameId);
-      const isPending = selectedGame && selectedGame.rateioRealizado !== true;
-      if (isPending) {
-        cashCollected = confirmedBets.length * mult;
-      } else {
-        cashCollected = 0;
-      }
-    }
-
+    const cashCollected = confirmedBets.length * mult;
     const uniquePhones = new Set(gameBets.map((b) => b.userPhone)).size;
     
-    // For average bets per game, if showing a single game, it's just the total bets of that game.
-    const avgBetsPerGame = selectedGameId !== "all" 
-      ? totalBets.toFixed(0) 
-      : (games.length > 0 ? (totalBets / games.length).toFixed(1) : "0");
+    // Average bets per game
+    const avgBetsPerGame = pendingGamesList.length > 0 
+      ? (totalBets / pendingGamesList.length).toFixed(1) 
+      : "0";
     const pendingAmount = pendingBets.length * mult;
     
     return {
@@ -96,18 +73,9 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
       avgBetsPerGame,
       pendingAmount
     };
-  }, [bets, games, selectedGameId, entryFee]);
+  }, [bets, pendingGamesList, pendingGameIds, entryFee]);
 
-  const cashCollectedLabel = useMemo(() => {
-    if (selectedGameId === "all") {
-      return "Arrecadado a Ratear";
-    }
-    const selectedGame = games.find((g) => g && g.id === selectedGameId);
-    if (selectedGame?.rateioRealizado === true) {
-      return "Rateio Realizado ✅";
-    }
-    return "Arrecadado a Ratear";
-  }, [games, selectedGameId]);
+  const cashCollectedLabel = "Arrecadado a Ratear";
 
   // Mask user phone for privacy while keeping useful identifying digits
   const formatPhone = (phone: string) => {
@@ -127,6 +95,10 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
     return bets
       .filter((bet) => {
         if (!bet) return false;
+        
+        // Match only games that are pending rateio
+        if (!pendingGameIds.has(bet.gameId)) return false;
+
         const game = gamesMap.get(bet.gameId);
         
         const rawName = bet.userName || "";
@@ -148,10 +120,7 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
           (statusFilter === "confirmed" && bet.status === "confirmed") ||
           (statusFilter === "pending" && bet.status === "pending");
 
-        // Match Game Filter
-        const matchGame = selectedGameId === "all" || bet.gameId === selectedGameId;
-
-        return matchSearch && matchStatus && matchGame;
+        return matchSearch && matchStatus;
       })
       .sort((a, b) => {
         if (!a || !b) return 0;
@@ -175,7 +144,7 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
             return 0;
         }
       });
-  }, [bets, gamesMap, searchTerm, statusFilter, selectedGameId, sortBy]);
+  }, [bets, gamesMap, pendingGameIds, searchTerm, statusFilter, sortBy]);
 
   return (
     <div className="bg-[#111] border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden animate-fade-in space-y-5">
@@ -202,23 +171,9 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
         <p className="text-[9px] font-black tracking-widest text-[#a1a1aa] uppercase flex flex-wrap items-center gap-1.5 leading-none">
           <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shrink-0"></span>
           <span>Painel de Transparência WL</span>
-          {selectedGameId !== "all" && gamesMap.has(selectedGameId) && (
-            <span className="text-blue-400 font-extrabold normal-case bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[8px] animate-fade-in inline-flex items-center gap-1">
-              Partida: {gamesMap.get(selectedGameId)?.homeTeam} x {gamesMap.get(selectedGameId)?.awayTeam}
-              {gamesMap.get(selectedGameId)?.isActive && (
-                <span className="text-yellow-400 font-bold font-mono">⭐ Ativo</span>
-              )}
-            </span>
-          )}
-          {selectedGameId !== "all" && gamesMap.has(selectedGameId) && (
-            <span className={`font-extrabold normal-case border px-2 py-0.5 rounded text-[8px] animate-fade-in inline-flex items-center gap-1 ${
-              gamesMap.get(selectedGameId)?.rateioRealizado
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-            }`}>
-              {gamesMap.get(selectedGameId)?.rateioRealizado ? "✓ Rateio Realizado" : "⏳ Aguardando Rateio"}
-            </span>
-          )}
+          <span className="text-blue-400 font-extrabold normal-case bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[8px] inline-flex items-center gap-1">
+            Partidas Pendentes de Rateio ⏳
+          </span>
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Cash Collected Card */}
@@ -283,7 +238,7 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
       </div>
 
       {/* Filters HUD */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-1">
         {/* Status Filter */}
         <div className="space-y-1">
           <label className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider flex items-center gap-1 leading-none">
@@ -297,25 +252,6 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
             <option value="all">Todos os Palpites</option>
             <option value="confirmed">Apenas Confirmados 🟢</option>
             <option value="pending">Pendentes de PIX 🟡</option>
-          </select>
-        </div>
-
-        {/* Game Filter */}
-        <div className="space-y-1">
-          <label className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider flex items-center gap-1 leading-none">
-            <Gamepad2 className="w-2.5 h-2.5 text-zinc-600" /> Partida
-          </label>
-          <select
-            value={selectedGameId}
-            onChange={(e) => setSelectedGameId(e.target.value)}
-            className="w-full bg-[#050505] border border-white/5 rounded-xl p-2 text-[10px] font-bold text-white/80 focus:outline-none focus:border-blue-500 truncate"
-          >
-            <option value="all">Todas as Partidas</option>
-            {games.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""} — {g.rateioRealizado ? "Rateio Realizado ✅" : "Aguardando Rateio ⏳"}
-              </option>
-            ))}
           </select>
         </div>
 
