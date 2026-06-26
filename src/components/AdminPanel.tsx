@@ -18,7 +18,7 @@ import {
   X
 } from "lucide-react";
 import { Game, Bet, Setting } from "../types";
-import { getTeamFlag } from "../lib/flags";
+import { getTeamFlag, countriesList } from "../lib/flags";
 import {
   addGame,
   updateGame,
@@ -656,26 +656,47 @@ export default function AdminPanel({
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">Time Mandante</label>
-                  <input
-                    type="text"
-                    required
-                    value={gHomeTeam}
-                    onChange={(e) => setGHomeTeam(e.target.value)}
-                    placeholder="ex: Brasil"
-                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-bold focus:outline-none focus:border-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={gHomeTeam}
+                      onChange={(e) => setGHomeTeam(e.target.value)}
+                      placeholder="ex: Brasil"
+                      list="countries-datalist"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl py-3 pl-9 pr-3 text-white font-bold focus:outline-none focus:border-blue-500"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sm select-none">
+                      {getTeamFlag(gHomeTeam)}
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">Time Visitante</label>
-                  <input
-                    type="text"
-                    required
-                    value={gAwayTeam}
-                    onChange={(e) => setGAwayTeam(e.target.value)}
-                    placeholder="ex: Haiti"
-                    className="w-full bg-[#050505] border border-white/10 rounded-xl p-3 text-white font-bold focus:outline-none focus:border-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={gAwayTeam}
+                      onChange={(e) => setGAwayTeam(e.target.value)}
+                      placeholder="ex: Haiti"
+                      list="countries-datalist"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl py-3 pl-9 pr-3 text-white font-bold focus:outline-none focus:border-blue-500"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sm select-none">
+                      {getTeamFlag(gAwayTeam)}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Datalist de Países estruturados */}
+                <datalist id="countries-datalist">
+                  {countriesList.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </datalist>
 
                 <div>
                   <label className="block text-[9px] uppercase font-bold text-white/40 mb-1.5 tracking-wider">Data amigável (BR)</label>

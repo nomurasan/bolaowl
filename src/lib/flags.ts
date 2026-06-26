@@ -175,3 +175,59 @@ export function getTeamFlag(teamName: string): string {
   // Fallback
   return "⚽";
 }
+
+export interface Country {
+  name: string;
+  flag: string;
+}
+
+export const countriesList: Country[] = [
+  { name: "Alemanha", flag: "🇩🇪" },
+  { name: "Arábia Saudita", flag: "🇸🇦" },
+  { name: "Argélia", flag: "🇩🇿" },
+  { name: "Argentina", flag: "🇦🇷" },
+  { name: "Austrália", flag: "🇦🇺" },
+  { name: "Bélgica", flag: "🇧🇪" },
+  { name: "Bolívia", flag: "🇧🇴" },
+  { name: "Brasil", flag: "🇧🇷" },
+  { name: "Camarões", flag: "🇨🇲" },
+  { name: "Canadá", flag: "🇨🇦" },
+  { name: "Catar", flag: "🇶🇦" },
+  { name: "Chile", flag: "🇨🇱" },
+  { name: "China", flag: "🇨🇳" },
+  { name: "Colômbia", flag: "🇨🇴" },
+  { name: "Coreia do Sul", flag: "🇰🇷" },
+  { name: "Costa Rica", flag: "🇨🇷" },
+  { name: "Croácia", flag: "🇭🇷" },
+  { name: "Dinamarca", flag: "🇩🇰" },
+  { name: "Equador", flag: "🇪🇨" },
+  { name: "Espanha", flag: "🇪🇸" },
+  { name: "Estados Unidos", flag: "🇺🇸" },
+  { name: "França", flag: "🇫🇷" },
+  { name: "Gales", flag: "🏴󠁧󠁢󠁷󠁬󠁳󠁿" },
+  { name: "Gana", flag: "🇬🇭" },
+  { name: "Grécia", flag: "🇬🇷" },
+  { name: "Haiti", flag: "🇭🇹" },
+  { name: "Holanda", flag: "🇳🇱" },
+  { name: "Inglaterra", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { name: "Irã", flag: "🇮🇷" },
+  { name: "Itália", flag: "🇮🇹" },
+  { name: "Japão", flag: "🇯🇵" },
+  { name: "Marrocos", flag: "🇲🇦" },
+  { name: "México", flag: "🇲🇽" },
+  { name: "Nigéria", flag: "🇳🇬" },
+  { name: "Paraguai", flag: "🇵🇾" },
+  { name: "Países Baixos", flag: "🇳🇱" },
+  { name: "Peru", flag: "🇵🇪" },
+  { name: "Polônia", flag: "🇵🇱" },
+  { name: "Portugal", flag: "🇵🇹" },
+  { name: "Senegal", flag: "🇸🇳" },
+  { name: "Sérvia", flag: "🇷🇸" },
+  { name: "Suécia", flag: "🇸🇪" },
+  { name: "Suíça", flag: "🇨🇭" },
+  { name: "Tunísia", flag: "🇹🇳" },
+  { name: "Turquia", flag: "🇹🇷" },
+  { name: "Ucrânia", flag: "🇺🇦" },
+  { name: "Uruguai", flag: "🇺🇾" },
+  { name: "Venezuela", flag: "🇻🇪" }
+];
