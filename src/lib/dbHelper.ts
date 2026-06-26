@@ -214,6 +214,7 @@ export async function addGame(gameData: Omit<Game, "id" | "createdAt">): Promise
     const newGame: Game = {
       ...gameData,
       id: docRef.id,
+      rateioRealizado: false,
       createdAt: Date.now(),
     };
     await setDoc(docRef, newGame);

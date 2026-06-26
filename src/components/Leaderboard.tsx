@@ -260,11 +260,11 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
           <select
             value={selectedGameId}
             onChange={(e) => setSelectedGameId(e.target.value)}
-            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer"
+            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:ring-1 focus:ring-blue-500 focus:outline-none cursor-pointer max-w-full sm:max-w-xs truncate"
           >
             {games.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.homeTeam} x {g.awayTeam} {g.isActive ? "⭐ (Ativo)" : ""}
+                {g.homeTeam} x {g.awayTeam} {g.isActive ? "⭐ (Ativo)" : ""} — {g.rateioRealizado ? "Rateio Realizado ✅" : "Aguardando Rateio ⏳"}
               </option>
             ))}
           </select>
@@ -278,6 +278,31 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
           Visualizando ranking do confronto: <span className="text-white font-extrabold">{games[0].homeTeam} x {games[0].awayTeam}</span>
         </div>
       )}
+
+      {/* Status Financeiro da Partida Selecionada */}
+      {(() => {
+        const selGame = games.find((g) => g.id === selectedGameId) || (games && games[0]);
+        if (!selGame) return null;
+        const isRateio = selGame.rateioRealizado === true;
+        return (
+          <div className={`border rounded-2xl p-4 flex items-center justify-between gap-3 ${
+            isRateio
+              ? "bg-emerald-950/10 border-emerald-500/20 text-emerald-400"
+              : "bg-amber-950/10 border-amber-500/20 text-amber-400"
+          }`}>
+            <div className="space-y-0.5">
+              <p className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Status Financeiro do Jogo:</p>
+              <p className="text-xs font-bold text-white">
+                {selGame.homeTeam} x {selGame.awayTeam}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/5 font-black uppercase tracking-wider text-[9px] bg-[#050505]">
+              <span className={`w-2 h-2 rounded-full ${isRateio ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
+              <span>{isRateio ? "Rateio Realizado" : "Aguardando Rateio"}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Busca */}
       <div className="relative">

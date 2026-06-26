@@ -10,6 +10,7 @@ export interface Game {
   awayScore?: number | null;
   firstGoalScorer?: string | null; // e.g. "Brasil", "Haiti", "Ninguém"
   isActive: boolean;
+  rateioRealizado?: boolean;
   createdAt: number;
 }
 

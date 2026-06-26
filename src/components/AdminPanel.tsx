@@ -396,7 +396,38 @@ export default function AdminPanel({
   const confirmedBets = dashBets.filter((b) => b && b.status === "confirmed");
   const pendingBets = dashBets.filter((b) => b && b.status === "pending");
   const feeMult = currentPixSetting.entryFee !== undefined ? currentPixSetting.entryFee : 10;
-  const totalCashCollected = confirmedBets.length * feeMult;
+
+  // Track pending game IDs for the financial sum
+  const pendingGameIds = React.useMemo(() => {
+    const gamesList = games || [];
+    return new Set(gamesList.filter((g) => g && g.rateioRealizado !== true).map((g) => g.id));
+  }, [games]);
+
+  const totalCashCollected = React.useMemo(() => {
+    if (dashGameFilter === "all") {
+      const eligibleBets = (bets || []).filter((b) => b && b.status === "confirmed" && pendingGameIds.has(b.gameId));
+      return eligibleBets.length * feeMult;
+    } else {
+      const selectedGame = (games || []).find((g) => g && g.id === dashGameFilter);
+      const isPending = selectedGame && selectedGame.rateioRealizado !== true;
+      if (isPending) {
+        const gameConfirmedBets = (bets || []).filter((b) => b && b.gameId === dashGameFilter && b.status === "confirmed");
+        return gameConfirmedBets.length * feeMult;
+      }
+      return 0;
+    }
+  }, [bets, games, dashGameFilter, pendingGameIds, feeMult]);
+
+  const totalCashCollectedLabel = React.useMemo(() => {
+    if (dashGameFilter === "all") {
+      return "Arrecadado a Ratear";
+    }
+    const selectedGame = (games || []).find((g) => g && g.id === dashGameFilter);
+    if (selectedGame?.rateioRealizado === true) {
+      return "Rateio Realizado";
+    }
+    return "Arrecadado a Ratear";
+  }, [games, dashGameFilter]);
   const uniqueParticipants = new Set(dashBets.map((b) => b?.userPhone || "N/A")).size;
 
   // Filtrar Palpites cadastrados na listagem
@@ -534,7 +565,7 @@ export default function AdminPanel({
                 <option value="all">Todas as Partidas (Geral)</option>
                 {games.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""}
+                    {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""} — {g.rateioRealizado ? "Rateio Realizado ✅" : "Aguardando Rateio ⏳"}
                   </option>
                 ))}
               </select>
@@ -548,7 +579,7 @@ export default function AdminPanel({
               <p className="text-2xl font-black font-mono text-white mt-1.5">{totalBetsCount}</p>
             </div>
             <div className="bg-[#050505] border border-white/10 rounded-2xl p-4 shadow-md flex flex-col justify-between">
-              <span className="text-[9px] uppercase font-bold text-blue-500 tracking-widest">Arrecadado PIX</span>
+              <span className="text-[9px] uppercase font-bold text-blue-500 tracking-widest">{totalCashCollectedLabel}</span>
               <p className="text-2xl font-black font-mono text-blue-500 mt-1.5 font-bold">
                 R$ {totalCashCollected.toFixed(2).replace(".", ",")}
               </p>
@@ -834,6 +865,15 @@ export default function AdminPanel({
                           Bloqueado
                         </span>
                       )}
+                      {game.rateioRealizado ? (
+                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border border-emerald-500/20">
+                          ✓ Rateio Realizado
+                        </span>
+                      ) : (
+                        <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border border-amber-500/20">
+                          ⏳ Aguardando Rateio
+                        </span>
+                      )}
                     </div>
                     <p className="text-white/40 font-semibold">
                       {game.date} • {game.time} • <span className="italic">{game.location}</span>
@@ -884,6 +924,19 @@ export default function AdminPanel({
                       className="bg-[#111] hover:bg-white/5 border border-white/10 text-white/80 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer"
                     >
                       {game.isActive ? "Desativar" : "Ativar"}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await updateGame(game.id, { rateioRealizado: !game.rateioRealizado });
+                        onRefreshData();
+                      }}
+                      className={`px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer border transition-colors ${
+                        game.rateioRealizado
+                          ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border-amber-500/20"
+                          : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
+                      }`}
+                    >
+                      {game.rateioRealizado ? "Reabrir Rateio" : "Marcar Rateio Realizado"}
                     </button>
                     <button
                       onClick={() => startEditGame(game)}

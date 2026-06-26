@@ -58,7 +58,27 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
     const confirmedBets = gameBets.filter((b) => b.status === "confirmed");
     const pendingBets = gameBets.filter((b) => b.status === "pending");
     const mult = entryFee !== undefined ? entryFee : 10;
-    const cashCollected = confirmedBets.length * mult;
+
+    // Filter games that are pending rateio (rateioRealizado !== true)
+    const pendingGameIds = new Set(games.filter((g) => g && g.rateioRealizado !== true).map((g) => g.id));
+
+    // Calculate cashCollected based on rateio rules
+    let cashCollected = 0;
+    if (selectedGameId === "all") {
+      // Sum all confirmed bets for games pending rateio
+      const eligibleBets = bets.filter((b) => b && b.status === "confirmed" && pendingGameIds.has(b.gameId));
+      cashCollected = eligibleBets.length * mult;
+    } else {
+      // For a specific game, only count its confirmed bets if it is pending rateio
+      const selectedGame = games.find((g) => g && g.id === selectedGameId);
+      const isPending = selectedGame && selectedGame.rateioRealizado !== true;
+      if (isPending) {
+        cashCollected = confirmedBets.length * mult;
+      } else {
+        cashCollected = 0;
+      }
+    }
+
     const uniquePhones = new Set(gameBets.map((b) => b.userPhone)).size;
     
     // For average bets per game, if showing a single game, it's just the total bets of that game.
@@ -77,6 +97,17 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
       pendingAmount
     };
   }, [bets, games, selectedGameId, entryFee]);
+
+  const cashCollectedLabel = useMemo(() => {
+    if (selectedGameId === "all") {
+      return "Arrecadado a Ratear";
+    }
+    const selectedGame = games.find((g) => g && g.id === selectedGameId);
+    if (selectedGame?.rateioRealizado === true) {
+      return "Rateio Realizado ✅";
+    }
+    return "Arrecadado a Ratear";
+  }, [games, selectedGameId]);
 
   // Mask user phone for privacy while keeping useful identifying digits
   const formatPhone = (phone: string) => {
@@ -179,11 +210,20 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
               )}
             </span>
           )}
+          {selectedGameId !== "all" && gamesMap.has(selectedGameId) && (
+            <span className={`font-extrabold normal-case border px-2 py-0.5 rounded text-[8px] animate-fade-in inline-flex items-center gap-1 ${
+              gamesMap.get(selectedGameId)?.rateioRealizado
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+            }`}>
+              {gamesMap.get(selectedGameId)?.rateioRealizado ? "✓ Rateio Realizado" : "⏳ Aguardando Rateio"}
+            </span>
+          )}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {/* Cash Collected Card */}
           <div className="bg-[#050505]/60 border border-white/5 rounded-2xl p-3 flex flex-col justify-between shadow-md">
-            <span className="text-[8px] sm:text-[9px] uppercase font-black text-blue-400 tracking-wider">Arrecadado PIX</span>
+            <span className="text-[8px] sm:text-[9px] uppercase font-black text-blue-400 tracking-wider">{cashCollectedLabel}</span>
             <p className="text-sm min-[360px]:text-base sm:text-lg font-black font-mono text-white mt-1">
               R$ {stats.cashCollected.toFixed(2).replace(".", ",")}
             </p>
@@ -273,7 +313,7 @@ export default function BetsOverview({ bets, games, entryFee }: BetsOverviewProp
             <option value="all">Todas as Partidas</option>
             {games.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""}
+                {g.homeTeam} x {g.awayTeam} {g.isActive ? " ⭐ (Ativo)" : ""} — {g.rateioRealizado ? "Rateio Realizado ✅" : "Aguardando Rateio ⏳"}
               </option>
             ))}
           </select>
