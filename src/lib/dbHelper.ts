@@ -409,16 +409,16 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
   if (!bets || !Array.isArray(bets)) return [];
 
   // Apenas apostas confirmadas somam pontos
-  const confirmedBets = bets.filter((b) => b && b.status === "confirmed" && b.calculatedPoints !== null && b.calculatedPoints !== undefined);
+  const confirmedBets = bets.filter((b) => b && b.status === "confirmed");
 
   const scoresMap = new Map<string, { userName: string; totalPoints: number; exactScoresCount: number; confirmedCount: number }>();
 
   confirmedBets.forEach((bet) => {
-    const rawPhone = bet.userPhone || "";
-    const rawName = bet.userName || "Anônimo";
+    const rawPhone = (bet.userPhone || "").trim();
+    const rawName = (bet.userName || "Anônimo").trim();
     
-    // Agrupar por telefone + nome para evitar colisão caso pessoas tenham nomes iguais
-    const key = `${rawPhone.trim()}_${rawName.trim().toLowerCase()}`;
+    // Agrupar por telefone. Se não houver telefone, agrupa por nome.
+    const key = rawPhone || `no_phone_${rawName.toLowerCase()}`;
     const points = bet.calculatedPoints || 0;
     const isExact = points >= 10; // Placar exato dá pelo menos 10 pontos
 
@@ -428,6 +428,10 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
       existingScore.confirmedCount += 1;
       if (isExact) {
         existingScore.exactScoresCount += 1;
+      }
+      // Se houver mais de um nome para o mesmo telefone, preferimos o nome mais completo (mais longo)
+      if (rawName.length > existingScore.userName.length) {
+        existingScore.userName = rawName;
       }
     } else {
       scoresMap.set(key, {
@@ -440,9 +444,8 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
   });
 
   const participants: ParticipantScore[] = Array.from(scoresMap.entries()).map(([key, data]) => {
-    // Extrai o telefone da chave
-    const parts = key.split("_");
-    const phone = parts[0] || "";
+    const isFallback = key.startsWith("no_phone_");
+    const phone = isFallback ? "" : key;
     return {
       userName: data.userName,
       userPhone: phone,

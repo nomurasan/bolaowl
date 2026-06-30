@@ -281,7 +281,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
         <div className="max-h-96 overflow-y-auto divide-y divide-white/10">
           {filteredParticipants.length === 0 ? (
             <div className="p-8 text-center text-xs text-white/40 font-semibold uppercase tracking-wider">
-              Nenhum participante encontrado no ranking para este jogo.
+              Nenhum participante encontrado no ranking.
             </div>
           ) : (
             filteredParticipants.map((p, index) => {
@@ -296,7 +296,7 @@ export default function Leaderboard({ bets, games }: LeaderboardProps) {
                 ? "bg-amber-700/[0.02] hover:bg-amber-700/[0.06]" 
                 : "hover:bg-white/[0.02]";
 
-              const userId = `${p.userPhone}_${p.userName}`;
+              const userId = p.userPhone || p.userName;
               const isExpanded = expandedUserId === userId;
               const userBets = (bets || []).filter(
                 (b) => b && openGameIds.has(b.gameId) && b.userPhone === p.userPhone && b.status === "confirmed"
