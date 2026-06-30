@@ -420,7 +420,7 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
     // Agrupar por telefone + nome para evitar colisão caso pessoas tenham nomes iguais
     const key = `${rawPhone.trim()}_${rawName.trim().toLowerCase()}`;
     const points = bet.calculatedPoints || 0;
-    const isExact = points >= 10; // Placar exato dá pelo menos 10 pontos (sem bônus do primeiro gol é 10, com é 13)
+    const isExact = points >= 10; // Placar exato dá pelo menos 10 pontos
 
     const existingScore = scoresMap.get(key);
     if (existingScore) {
@@ -452,7 +452,7 @@ export async function calculateRanking(bets: Bet[]): Promise<ParticipantScore[]>
     };
   });
 
-  // Ordenar decrescente por Pontos de Palpites.
+  // Ordenar decrescente por Pontos Acumulados.
   // Critério de desempate:
   // 1. Maior número de placares exatos acertados
   // 2. Maior número de palpites confirmados
